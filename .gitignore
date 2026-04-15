@@ -1,0 +1,44 @@
+# ── Python ────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual environment ───────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Model weights (too large for GitHub ~11 MB+) ──
+# Remove this line if you WANT to push the model
+dataset/model/*.h5
+dataset/model/*.keras
+
+# ── User uploads (runtime data, not source code) ──
+dataset/static/uploads/*
+# Keep the uploads folder itself
+!dataset/static/uploads/.gitkeep
+
+# ── Dataset images (large binary data — share separately via Drive/Kaggle) ──
+dataset/train/
+dataset/validation/
+
+# ── Database (runtime data) ───────────────────────
+history.db
+
+# ── OS / Editor junk ──────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── Environment variables ─────────────────────────
+.env
+.env.*

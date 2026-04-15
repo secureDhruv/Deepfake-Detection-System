@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deepfake Detector</title>
+  <!-- External stylesheet (fixes: CSS was embedded inline, external file was never linked) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🔍</div>
+    <h1>AI Deepfake Detector</h1>
+    <p class="subtitle">Upload an image to check if it's AI-generated or real.</p>
+
+    <!-- Flash messages for server-side validation errors -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="result-box uncertain" style="display:block;margin-bottom:1rem;">
+          {% for msg in messages %}{{ msg }}{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" action="{{ url_for('index') }}" id="detect-form">
+      <div class="upload-area" id="upload-area">
+        <input
+          type="file"
+          name="image"
+          id="image"
+          accept="image/png, image/jpeg, image/webp"
+          required
+          aria-label="Upload an image to analyse"
+        />
+        <div class="upload-icon">🖼️</div>
+        <span class="upload-label">Click or drag an image here</span>
+        <span class="upload-hint">PNG, JPG or WEBP · Max 10 MB</span>
+      </div>
+
+      <!-- Image preview — required by script.js (was missing, caused TypeError) -->
+      <img id="preview" alt="Image preview" />
+
+      <p id="file-name"></p>
+      <!-- Error paragraph — required by script.js (was missing, caused TypeError) -->
+      <p id="file-error"></p>
+
+      <button type="submit" id="submit-btn">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-label">Detect</span>
+      </button>
+    </form>
+
+    {% if result %}
+    <div class="result-box
+      {% if 'real' in result.lower() %}real
+      {% elif 'fake' in result.lower() or 'deepfake' in result.lower() %}fake
+      {% else %}uncertain{% endif %}"
+      id="result-box"
+    >
+      {{ result }}
+      <!-- Confidence score display (confidence was computed but never shown) -->
+      {% if confidence %}
+        <div style="font-size:0.85rem;font-weight:400;opacity:0.8;margin-top:0.25rem;">
+          Confidence: {{ confidence }}%
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <a class="dashboard-link" href="/dashboard">📊 View Detection History</a>
+  </div>
+
+  <!-- External script (was never linked — all JS features were silently missing) -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

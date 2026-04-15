@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detection Dashboard | DeepGuard AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <nav class="bg-indigo-700 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-tight">DeepGuard AI <span class="font-light text-indigo-200">| History</span></h1>
+            <a href="/" class="text-sm bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded transition">New Analysis</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto py-10 px-4">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-800">Recent Detections</h2>
+            <span class="text-sm text-gray-500">Total Records: {{ data|length }}</span>
+        </div>
+
+        {% if data %}
+        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-100 border-b border-gray-200 text-gray-600 uppercase text-xs font-bold">
+                    <tr>
+                        <th class="px-6 py-4">ID</th>
+                        <th class="px-6 py-4">Preview</th>
+                        <th class="px-6 py-4">Filename</th>
+                        <th class="px-6 py-4">Result</th>
+                        <th class="px-6 py-4">Confidence</th>
+                        <th class="px-6 py-4 text-right">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in data %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">#{{ row[0] }}</td>
+                        <td class="px-6 py-4">
+                            <!-- onerror fallback prevents broken image icon if file was deleted -->
+                            <img src="{{ url_for('static', filename='uploads/' ~ row[1]) }}"
+                                 alt="Upload"
+                                 onerror="this.src='https://placehold.co/48x48?text=N%2FA'"
+                                 class="w-12 h-12 object-cover rounded-md border shadow-sm">
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-700 max-w-[140px] truncate" title="{{ row[1] }}">
+                            {{ row[1] }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <!--
+                              Bug fix: was `row[2]|lower == 'fake'` which never matched "fake image".
+                              Now uses `'fake' in ...` so "Fake Image" is correctly detected.
+                            -->
+                            {% if 'fake' in (row[2] | default('') | lower) %}
+                                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">FAKE</span>
+                            {% else %}
+                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">REAL</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <!--
+                              Bug fix: row[3] can be None for old rows saved before the confidence fix.
+                              Default to 0 for the bar width, show "—" as the text label.
+                            -->
+                            {% set conf = row[3] if row[3] is not none else 0 %}
+                            <div class="w-full bg-gray-200 rounded-full h-2 max-w-[100px] inline-block mr-2">
+                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ conf }}%;"></div>
+                            </div>
+                            <span class="font-medium text-gray-700">
+                                {% if row[3] is not none %}{{ row[3] }}%{% else %}—{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ row[4] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <!-- Empty state — was missing entirely, table rendered blank with no feedback -->
+        <div class="text-center py-20 text-gray-400">
+            <p class="text-5xl mb-4">📭</p>
+            <p class="text-lg font-medium">No detections yet.</p>
+            <p class="text-sm mt-1">
+                Upload an image on the
+                <a href="/" class="text-indigo-500 hover:underline">home page</a>
+                to get started.
+            </p>
+        </div>
+        {% endif %}
+    </main>
+
+</body>
+</html>
