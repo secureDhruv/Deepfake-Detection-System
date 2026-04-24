@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings | DeepGuard AI</title>
+  <meta name="description" content="Configure DeepGuard AI detection settings, model preferences, and display options." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <style>
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Settings nav */
+    .settings-nav {
+      position: sticky;
+      top: 85px;
+    }
+
+    .settings-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition);
+      border: 1px solid transparent;
+    }
+
+    .settings-nav-item:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+    }
+
+    .settings-nav-item.active {
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border-color: rgba(0, 242, 255, 0.2);
+    }
+
+    .settings-nav-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+
+    /* Settings sections */
+    .settings-section {
+      display: none;
+      flex-direction: column;
+      gap: 1.25rem;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .settings-section.active { display: flex; }
+
+    .settings-card {
+      padding: 1.5rem;
+    }
+
+    .settings-card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .settings-card-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    /* Setting row */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--border-color);
+      gap: 1.5rem;
+    }
+
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-row:first-of-type { padding-top: 0; }
+
+    .setting-info { flex: 1; }
+
+    .setting-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+
+    .setting-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Toggle switch reuse */
+    .setting-toggle {
+      position: relative;
+      width: 40px; height: 22px;
+      flex-shrink: 0;
+    }
+
+    .setting-toggle input { opacity: 0; width: 0; height: 0; }
+
+    .setting-toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .setting-toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      left: 2px; top: 2px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .setting-toggle input:checked + .setting-toggle-slider {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      box-shadow: var(--cyan-glow-sm);
+    }
+
+    .setting-toggle input:checked + .setting-toggle-slider::before {
+      transform: translateX(18px);
+      background: #000;
+    }
+
+    /* Range slider */
+    .setting-range {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .setting-range input[type="range"] {
+      -webkit-appearance: none;
+      width: 120px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .setting-range input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: var(--cyan-glow-sm);
+      cursor: pointer;
+    }
+
+    .range-val {
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* Select dropdown */
+    .setting-select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-family: 'Inter', sans-serif;
+      padding: 0.4rem 0.75rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition);
+      min-width: 140px;
+    }
+
+    .setting-select:focus {
+      border-color: var(--cyan);
+      box-shadow: var(--cyan-glow-sm);
+    }
+
+    /* Badge tag */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+
+    .tag-cyan {
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border: 1px solid rgba(0,242,255,0.2);
+    }
+
+    .tag-green {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(0,217,126,0.2);
+    }
+
+    /* Info box */
+    .info-box {
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,242,255,0.15);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .info-box-icon { color: var(--cyan); flex-shrink: 0; margin-top: 1px; }
+
+    /* Save button */
+    .btn-save {
+      padding: 0.6rem 1.5rem;
+      background: var(--cyan);
+      color: #000;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: none;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition);
+    }
+
+    .btn-save:hover {
+      box-shadow: var(--cyan-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-save:active { transform: scale(0.98); }
+
+    /* Danger zone */
+    .danger-card {
+      border-color: rgba(255,56,96,0.25) !important;
+    }
+
+    .danger-card .settings-card-title { color: var(--red); }
+
+    .btn-danger {
+      padding: 0.55rem 1.1rem;
+      background: var(--red-dim);
+      border: 1px solid rgba(255,56,96,0.35);
+      border-radius: var(--radius-sm);
+      color: var(--red);
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+
+    .btn-danger:hover { background: rgba(255,56,96,0.25); }
+
+    /* About info grid */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .about-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.85rem 1rem;
+    }
+
+    .about-item-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 0.3rem;
+    }
+
+    .about-item-value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #151B27;
+      border: 1px solid rgba(0,242,255,0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.82rem;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--cyan-glow-sm);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 780px) {
+      .settings-grid { grid-template-columns: 1fr; }
+      .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+      .about-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">DeepGuard AI</div>
+      <div class="logo-sub">Synthetic Media Detection</div>
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar">&#10094;</button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Workspace</div>
+      <a href="/" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>New Analysis</span>
+      </a>
+      <a href="/dashboard" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        <span>Detection History</span>
+      </a>
+      <div class="nav-section-label" style="margin-top:0.5rem;">Tools</div>
+      <a href="/analytics" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span>Analytics</span>
+      </a>
+      <a href="/settings" class="nav-link active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
+        </svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-engine-status">
+        <span class="status-dot"></span>
+        <span>AI Engine Online</span>
+      </div>
+      {% if engine_models %}
+      <div class="sidebar-model-panel">
+        <div class="sidebar-panel-label">Ensemble Models</div>
+        {% for mname in engine_models %}
+        <div class="sidebar-model-row">
+          <div class="sidebar-model-header">
+            <span class="sidebar-model-name">{{ mname }}</span>
+            <span class="sidebar-model-conf" style="color:var(--text-muted);">Ready</span>
+          </div>
+          <div class="sidebar-mini-bar">
+            <div class="sidebar-mini-fill idle" style="width:100%;"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- ── Main ───────────────────────────────────── -->
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Settings</div>
+        <div class="topbar-subtitle">Manage model, display, and system preferences</div>
+      </div>
+      <button class="btn-save" onclick="saveSettings()">Save Changes</button>
+    </header>
+
+    <div class="page-area">
+      <div class="settings-grid">
+
+        <!-- Left nav -->
+        <div class="glass-card settings-nav" style="padding:0.5rem;">
+          <div class="settings-nav-item active" onclick="switchTab(this,'tab-model')">
+            <span class="settings-nav-dot"></span> Model
+          </div>
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-display')">
+            <span class="settings-nav-dot"></span> Display
+          </div>
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-storage')">
+            <span class="settings-nav-dot"></span> Storage
+          </div>
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-about')">
+            <span class="settings-nav-dot"></span> About
+          </div>
+        </div>
+
+        <!-- Right content -->
+        <div>
+
+          <!-- ── TAB: Model ── -->
+          <div class="settings-section active" id="tab-model">
+
+            <div class="glass-card settings-card">
+              <div class="settings-card-title">Detection Model</div>
+              <div class="settings-card-sub">Configure the AI engine used for analysis</div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Active Model</div>
+                  <div class="setting-desc">The neural network architecture currently powering detections</div>
+                </div>
+                <span class="tag tag-cyan">MobileNetV2</span>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Confidence Threshold</div>
+                  <div class="setting-desc">Minimum score to classify a result as Deepfake. Higher = more strict.</div>
+                </div>
+                <div class="setting-range">
+                  <input type="range" id="conf-threshold" min="40" max="95" value="50"
+                    oninput="document.getElementById('conf-val').textContent=this.value+'%'" />
+                  <span class="range-val" id="conf-val">50%</span>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Input Resolution</div>
+                  <div class="setting-desc">Image resize dimension fed into the model (fixed by architecture)</div>
+                </div>
+                <span class="tag tag-cyan">224 &times; 224 px</span>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Data Augmentation</div>
+                  <div class="setting-desc">Enable training-time augmentation for improved robustness</div>
+                </div>
+                <label class="setting-toggle">
+                  <input type="checkbox" id="aug-toggle" checked />
+                  <span class="setting-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Fine-Tuning Mode</div>
+                  <div class="setting-desc">Unfreeze base model layers for advanced retraining (requires GPU)</div>
+                </div>
+                <label class="setting-toggle">
+                  <input type="checkbox" id="finetune-toggle" />
+                  <span class="setting-toggle-slider"></span>
+                </label>
+              </div>
+
+            </div>
+
+            <div class="info-box">
+              <span class="info-box-icon">&#9432;</span>
+              <span>Model file is stored at <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">dataset/model/deepfake_model.h5</code>. Retrain using <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">python train_model.py</code> to apply new settings.</span>
+            </div>
+          </div>
+
+          <!-- ── TAB: Display ── -->
+          <div class="settings-section" id="tab-display">
+            <div class="glass-card settings-card">
+              <div class="settings-card-title">Interface Preferences</div>
+              <div class="settings-card-sub">Customize how the dashboard looks and behaves</div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Show Heatmap by Default</div>
+                  <div class="setting-desc">Auto-enable heatmap overlay when opening analysis results</div>
+                </div>
+                <label class="setting-toggle">
+                  <input type="checkbox" id="heatmap-default" checked />
+                  <span class="setting-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Sidebar Default State</div>
+                  <div class="setting-desc">Start with the sidebar expanded or collapsed on page load</div>
+                </div>
+                <select class="setting-select" id="sidebar-default">
+                  <option value="expanded">Expanded</option>
+                  <option value="collapsed">Collapsed</option>
+                </select>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Table Rows Per Page</div>
+                  <div class="setting-desc">Number of detections shown in the history table</div>
+                </div>
+                <select class="setting-select" id="rows-per-page">
+                  <option value="10">10 rows</option>
+                  <option value="25" selected>25 rows</option>
+                  <option value="50">50 rows</option>
+                  <option value="all">All</option>
+                </select>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Animations</div>
+                  <div class="setting-desc">Enable fade-in, slide-up, and pulse animations across the UI</div>
+                </div>
+                <label class="setting-toggle">
+                  <input type="checkbox" id="animations-toggle" checked />
+                  <span class="setting-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Confidence Bar Color</div>
+                  <div class="setting-desc">Color scheme used on confidence bars in the history table</div>
+                </div>
+                <select class="setting-select" id="conf-color">
+                  <option value="traffic" selected>Traffic Light</option>
+                  <option value="mono">Monochrome</option>
+                  <option value="cyan">Cyan Only</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── TAB: Storage ── -->
+          <div class="settings-section" id="tab-storage">
+            <div class="glass-card settings-card">
+              <div class="settings-card-title">Storage & Data</div>
+              <div class="settings-card-sub">Manage your stored scan records and uploaded files</div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Total Scan Records</div>
+                  <div class="setting-desc">Number of detections stored in the database</div>
+                </div>
+                <span class="tag tag-green">{{ record_count }} records</span>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Database File</div>
+                  <div class="setting-desc">SQLite database location on your system</div>
+                </div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);">history.db</span>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Auto-Delete Uploads</div>
+                  <div class="setting-desc">Automatically remove uploaded image files after analysis</div>
+                </div>
+                <label class="setting-toggle">
+                  <input type="checkbox" id="auto-delete-toggle" />
+                  <span class="setting-toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Max Upload Size</div>
+                  <div class="setting-desc">Maximum allowed image file size per scan</div>
+                </div>
+                <span class="tag tag-cyan">10 MB</span>
+              </div>
+
+            </div>
+
+            <div class="glass-card settings-card danger-card">
+              <div class="settings-card-title">&#9888; Danger Zone</div>
+              <div class="settings-card-sub">These actions are permanent and cannot be undone</div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Clear All History</div>
+                  <div class="setting-desc">Permanently delete all scan records from the database</div>
+                </div>
+                <button class="btn-danger" onclick="confirmClear()">Clear All</button>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-info">
+                  <div class="setting-label">Delete All Uploads</div>
+                  <div class="setting-desc">Remove all images stored in the uploads folder</div>
+                </div>
+                <button class="btn-danger" onclick="confirmDeleteUploads()">Delete Files</button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ── TAB: About ── -->
+          <div class="settings-section" id="tab-about">
+            <div class="glass-card settings-card">
+              <div class="settings-card-title">System Information</div>
+              <div class="settings-card-sub">Details about your DeepGuard AI installation</div>
+
+              <div class="about-grid">
+                <div class="about-item">
+                  <div class="about-item-label">Application</div>
+                  <div class="about-item-value">DeepGuard AI</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Version</div>
+                  <div class="about-item-value">1.0.0</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Backend</div>
+                  <div class="about-item-value">Flask + Python</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">ML Framework</div>
+                  <div class="about-item-value">TensorFlow 2.x</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Model</div>
+                  <div class="about-item-value">MobileNetV2</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Database</div>
+                  <div class="about-item-value">SQLite 3</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Model Size</div>
+                  <div class="about-item-value">~11 MB</div>
+                </div>
+                <div class="about-item">
+                  <div class="about-item-label">Status</div>
+                  <div class="about-item-value" style="color:var(--green);">&#9679; Online</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card settings-card">
+              <div class="settings-card-title">Supported Formats</div>
+              <div class="settings-card-sub">File types accepted by the detection engine</div>
+              <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.5rem;">
+                <span class="tag tag-cyan">PNG</span>
+                <span class="tag tag-cyan">JPG / JPEG</span>
+                <span class="tag tag-cyan">WEBP</span>
+              </div>
+              <div style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted);">
+                Max upload size: <strong style="color:var(--text-secondary);">10 MB</strong> &nbsp;&middot;&nbsp;
+                Input resolution: <strong style="color:var(--text-secondary);">224 &times; 224 px</strong>
+              </div>
+            </div>
+
+          </div>
+
+        </div><!-- /right content -->
+      </div><!-- /settings-grid -->
+    </div><!-- /page-area -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- Toast notification -->
+<div class="toast" id="save-toast">&#10003; Settings saved</div>
+
+<!-- Danger confirm modal -->
+<div class="modal-overlay" id="danger-modal">
+  <div class="modal-box">
+    <div class="modal-icon">&#9888;</div>
+    <div class="modal-title" id="danger-title">Are you sure?</div>
+    <p class="modal-text" id="danger-text">This action is permanent.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDangerModal()">Cancel</button>
+      <button class="btn-confirm-delete" id="danger-confirm-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  /* ── Tab switching ── */
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
+    document.querySelectorAll('.settings-section').forEach(function(s) { s.classList.remove('active'); });
+    el.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  /* ── Save toast ── */
+  function saveSettings() {
+    var toast = document.getElementById('save-toast');
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 2500);
+  }
+
+  /* ── Danger modal ── */
+  var dangerCallback = null;
+
+  function confirmClear() {
+    document.getElementById('danger-title').textContent = 'Clear All History?';
+    document.getElementById('danger-text').textContent = 'All scan records will be permanently deleted from the database.';
+    dangerCallback = function() { fetch('/clear-history', { method: 'POST' }).then(function() { window.location.reload(); }); };
+    document.getElementById('danger-modal').classList.add('show');
+  }
+
+  function confirmDeleteUploads() {
+    document.getElementById('danger-title').textContent = 'Delete All Uploads?';
+    document.getElementById('danger-text').textContent = 'All image files in the uploads folder will be permanently removed.';
+    dangerCallback = function() { fetch('/clear-uploads', { method: 'POST' }).then(function() { saveSettings(); }); };
+    document.getElementById('danger-modal').classList.add('show');
+  }
+
+  function closeDangerModal() {
+    dangerCallback = null;
+    document.getElementById('danger-modal').classList.remove('show');
+  }
+
+  document.getElementById('danger-confirm-btn').addEventListener('click', function() {
+    if (dangerCallback) dangerCallback();
+    closeDangerModal();
+  });
+
+  document.getElementById('danger-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDangerModal();
+  });
+</script>
+</body>
+</html>

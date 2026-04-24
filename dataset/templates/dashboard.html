@@ -1,97 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detection Dashboard | DeepGuard AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detection History | DeepGuard AI</title>
+  <meta name="description" content="Review all past deepfake detection scans, confidence scores, and analysis results." />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
-<body class="bg-gray-50 font-sans">
+<body>
 
-    <nav class="bg-indigo-700 text-white p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold tracking-tight">DeepGuard AI <span class="font-light text-indigo-200">| History</span></h1>
-            <a href="/" class="text-sm bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded transition">New Analysis</a>
-        </div>
+<div class="app-layout">
+
+  <!-- ── Sidebar ─────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">DeepGuard AI</div>
+      <div class="logo-sub">Synthetic Media Detection</div>
+      <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar">&#10094;</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Workspace</div>
+
+      <a href="/" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        New Analysis
+      </a>
+
+      <a href="/dashboard" class="nav-link active">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+        </svg>
+        Detection History
+      </a>
+
+      <div class="nav-section-label" style="margin-top:0.5rem;">Tools</div>
+
+      <a href="/analytics" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span>Analytics</span>
+      </a>
+
+      <a href="/settings" class="nav-link">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
+        </svg>
+        <span>Settings</span>
+        
+      </a>
     </nav>
 
-    <main class="container mx-auto py-10 px-4">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-semibold text-gray-800">Recent Detections</h2>
-            <span class="text-sm text-gray-500">Total Records: {{ data|length }}</span>
+    <div class="sidebar-footer">
+      <div class="sidebar-engine-status">
+        <span class="status-dot"></span>
+        <span>AI Engine Online</span>
+      </div>
+      {% if engine_models %}
+      <div class="sidebar-model-panel">
+        <div class="sidebar-panel-label">Ensemble Models</div>
+        {% for mname in engine_models %}
+        <div class="sidebar-model-row">
+          <div class="sidebar-model-header">
+            <span class="sidebar-model-name">{{ mname }}</span>
+            <span class="sidebar-model-conf" style="color:var(--text-muted);">Ready</span>
+          </div>
+          <div class="sidebar-mini-bar">
+            <div class="sidebar-mini-fill idle" style="width:100%;"></div>
+          </div>
         </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </aside>
 
+  <!-- ── Main ───────────────────────────────────── -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div>
+        <div class="topbar-title">Detection History</div>
+        <div class="topbar-subtitle">All past scans and analysis results</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div class="search-bar">
+          <span class="search-icon">⌕</span>
+          <input type="text" placeholder="Search filename..." id="search-input" />
+        </div>
+        <a href="/" class="btn-outline-cyan">
+          <span>+</span> New Scan
+        </a>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <div class="page-area">
+
+      <div class="page-header">
+        <div>
+          <div class="page-header-title">Recent Detections</div>
+          <div class="page-header-sub">Showing all stored scan records</div>
+        </div>
+        <div class="stat-chips">
+          <div class="stat-chip">
+            Total <strong>{{ data|length }}</strong>
+          </div>
+          <div class="stat-chip">
+            Fakes <strong id="chip-fake">
+              {% set fake_count = namespace(value=0) %}
+              {% for row in data %}
+                {% if 'fake' in (row[2] | default('') | lower) %}
+                  {% set fake_count.value = fake_count.value + 1 %}
+                {% endif %}
+              {% endfor %}
+              {{ fake_count.value }}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card">
         {% if data %}
-        <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-100 border-b border-gray-200 text-gray-600 uppercase text-xs font-bold">
-                    <tr>
-                        <th class="px-6 py-4">ID</th>
-                        <th class="px-6 py-4">Preview</th>
-                        <th class="px-6 py-4">Filename</th>
-                        <th class="px-6 py-4">Result</th>
-                        <th class="px-6 py-4">Confidence</th>
-                        <th class="px-6 py-4 text-right">Timestamp</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for row in data %}
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-sm text-gray-500 font-mono">#{{ row[0] }}</td>
-                        <td class="px-6 py-4">
-                            <!-- onerror fallback prevents broken image icon if file was deleted -->
-                            <img src="{{ url_for('static', filename='uploads/' ~ row[1]) }}"
-                                 alt="Upload"
-                                 onerror="this.src='https://placehold.co/48x48?text=N%2FA'"
-                                 class="w-12 h-12 object-cover rounded-md border shadow-sm">
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-700 max-w-[140px] truncate" title="{{ row[1] }}">
-                            {{ row[1] }}
-                        </td>
-                        <td class="px-6 py-4">
-                            <!--
-                              Bug fix: was `row[2]|lower == 'fake'` which never matched "fake image".
-                              Now uses `'fake' in ...` so "Fake Image" is correctly detected.
-                            -->
-                            {% if 'fake' in (row[2] | default('') | lower) %}
-                                <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-semibold">FAKE</span>
-                            {% else %}
-                                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">REAL</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            <!--
-                              Bug fix: row[3] can be None for old rows saved before the confidence fix.
-                              Default to 0 for the bar width, show "—" as the text label.
-                            -->
-                            {% set conf = row[3] if row[3] is not none else 0 %}
-                            <div class="w-full bg-gray-200 rounded-full h-2 max-w-[100px] inline-block mr-2">
-                                <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ conf }}%;"></div>
-                            </div>
-                            <span class="font-medium text-gray-700">
-                                {% if row[3] is not none %}{{ row[3] }}%{% else %}—{% endif %}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500 text-right">{{ row[4] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="table-wrap">
+          <table class="data-table" id="history-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Preview</th>
+                <th>Filename</th>
+                <th>Result</th>
+                <th>Confidence</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              {% for row in data %}
+              <tr id="row-{{ row[0] }}" data-filename="{{ row[1] | lower }}">
+                <td>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text-muted);">#{{ row[0] }}</span>
+                </td>
+                <td class="thumb-cell">
+                  <img
+                    src="{{ url_for('static', filename='uploads/' ~ row[1]) }}"
+                    alt="{{ row[1] }}"
+                    onerror="this.src='https://placehold.co/44x44/111827/4A5568?text=N%2FA'"
+                  />
+                </td>
+                <td>
+                  <div class="filename-cell" title="{{ row[1] }}">{{ row[1] }}</div>
+                </td>
+                <td>
+                  {% if 'fake' in (row[2] | default('') | lower) %}
+                    <span class="badge badge-fake">&#9888; Deepfake</span>
+                  {% else %}
+                    <span class="badge badge-real">&#10003; Authentic</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% set conf = row[3] if row[3] is not none else 0 %}
+                  <div class="conf-wrap">
+                    <div class="conf-bar-track">
+                      {% set style_attr = 'style="width:' ~ conf ~ '%;"' %}
+                      <div class="conf-bar-fill {% if conf > 70 %}high{% elif conf > 40 %}mid{% else %}low{% endif %}"
+                           {{ style_attr | safe }}></div>
+                    </div>
+                    <span class="conf-label">
+                      {% if row[3] is not none %}{{ row[3] }}%{% else %}&mdash;{% endif %}
+                    </span>
+                    <div style="font-size:0.6rem; color:var(--cyan); margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Ensemble Aggregate</div>
+                  </div>
+                </td>
+                <td class="ts-cell">{{ row[4] }}</td>
+                <td>
+                  <div class="action-btns">
+                    {% set onclick_view = 'onclick="window.location.href=\'/analysis/' ~ row[0] ~ '\'"' %}
+                    <button class="btn-icon view"
+                            title="View Analysis"
+                            {{ onclick_view | safe }}>
+                      &#128065;
+                    </button>
+                    {% set onclick_del = 'onclick="openDeleteModal(' ~ row[0] ~ ')"' %}
+                    <button class="btn-icon delete"
+                            title="Delete Record"
+                            {{ onclick_del | safe }}>
+                      &#128465;
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
 
         {% else %}
-        <!-- Empty state — was missing entirely, table rendered blank with no feedback -->
-        <div class="text-center py-20 text-gray-400">
-            <p class="text-5xl mb-4">📭</p>
-            <p class="text-lg font-medium">No detections yet.</p>
-            <p class="text-sm mt-1">
-                Upload an image on the
-                <a href="/" class="text-indigo-500 hover:underline">home page</a>
-                to get started.
-            </p>
+        <!-- Empty state -->
+        <div class="empty-state">
+          <div class="empty-icon">&#128289;</div>
+          <p style="font-size:1rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;">No detections yet</p>
+          <p>Upload an image on the <a href="/">home page</a> to get started.</p>
         </div>
         {% endif %}
-    </main>
+      </div><!-- /glass-card -->
 
+    </div><!-- /page-area -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- ── Delete Confirmation Modal ─────────────────── -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <div class="modal-icon">&#128465;</div>
+    <div class="modal-title">Delete this record?</div>
+    <p class="modal-text">This action cannot be undone. The scan record will be permanently removed from history.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-confirm-delete" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  /* ── Live search ── */
+  const searchInput = document.getElementById('search-input');
+  const rows = document.querySelectorAll('#table-body tr');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function () {
+      const query = this.value.toLowerCase().trim();
+      rows.forEach(function(row) {
+        const fname = row.getAttribute('data-filename') || '';
+        row.style.display = fname.includes(query) ? '' : 'none';
+      });
+    });
+
+    // Auto-fill search from URL query param
+    const urlParams = new URLSearchParams(window.location.search);
+    const q = urlParams.get('q');
+    if (q) {
+      searchInput.value = q;
+      searchInput.dispatchEvent(new Event('input'));
+    }
+  }
+
+  /* ── Delete modal ── */
+  let pendingDeleteId = null;
+
+  function openDeleteModal(id) {
+    pendingDeleteId = id;
+    document.getElementById('delete-modal').classList.add('show');
+  }
+
+  function closeDeleteModal() {
+    pendingDeleteId = null;
+    document.getElementById('delete-modal').classList.remove('show');
+  }
+
+  document.getElementById('confirm-delete-btn').addEventListener('click', function () {
+    if (!pendingDeleteId) return;
+    const row = document.getElementById('row-' + pendingDeleteId);
+    if (row) {
+      row.classList.add('removing');
+      setTimeout(function () { row.remove(); }, 360);
+    }
+    // Hit the real backend to delete from DB
+    fetch('/delete/' + pendingDeleteId, { method: 'POST' });
+    closeDeleteModal();
+  });
+
+  // Close modal when clicking overlay background
+  document.getElementById('delete-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteModal();
+  });
+
+  /* ── Count fakes for stat chip ── */
+  (function() {
+    let fakeCount = 0;
+    document.querySelectorAll('.badge-fake').forEach(function() { fakeCount++; });
+    const chipFake = document.getElementById('chip-fake');
+    if (chipFake) chipFake.textContent = fakeCount;
+  })();
+</script>
 </body>
 </html>

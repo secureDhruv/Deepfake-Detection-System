@@ -270,21 +270,27 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4 · Prepare the Dataset
+### 4 · Download the Model & Dataset from Google Drive
 
-```
-Your dataset folders must follow this exact structure:
+Because the model weights and training datasets are extremely large, they are not hosted on GitHub. You should download the **assets zip file** directly from Google Drive.
 
-dataset/train/
-├── fake/   ← Place AI-generated / deepfake images here
-└── real/   ← Place authentic face images here
+1. **Download the Zip**
+   * [Click here to download `deepfake_assets.zip`](YOUR_GOOGLE_DRIVE_PUBLIC_LINK_HERE)
 
-dataset/validation/
-├── fake/   ← Validation deepfake images (10-20% of train set)
-└── real/   ← Validation real images
+2. **Extract the Assets**  
+   Extract the contents of the zip file into the `dataset/` directory. Once extracted, your structure MUST look like this:
 
-Recommended minimum:  500 images per class
-Recommended format:   JPG or PNG, face clearly visible
+```text
+Deepfake Detector/
+└── dataset/
+    ├── model/
+    │   └── deepfake_model.h5     ← The 11 MB Keras model
+    ├── train/
+    │   ├── fake/                 ← AI-generated background images
+    │   └── real/                 ← Authentic faces
+    └── validation/
+        ├── fake/
+        └── real/
 ```
 
 ### 5 · Train the Model

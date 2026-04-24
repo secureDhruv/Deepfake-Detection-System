@@ -15,27 +15,37 @@ def init_db():
             filename  TEXT,
             result    TEXT,
             confidence REAL,
-            date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            date      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            details   TEXT
         )
         """)
+        
+        # Upgrade existing database schema safely
+        cursor.execute("PRAGMA table_info(detections)")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'details' not in columns:
+            cursor.execute("ALTER TABLE detections ADD COLUMN details TEXT")
+            
         conn.commit()
     finally:
         conn.close()
 
 
-def save_detection(filename: str, result: str, confidence: float | None = None):
+def save_detection(filename: str, result: str, confidence: float | None = None, details: str | None = None):
     """Insert one detection row. Swallows DB errors so a write failure
     never crashes the Flask request."""
     conn = sqlite3.connect(DB_PATH)
     try:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO detections (filename, result, confidence) VALUES (?, ?, ?)",
-            (filename, result, confidence),
+            "INSERT INTO detections (filename, result, confidence, details) VALUES (?, ?, ?, ?)",
+            (filename, result, confidence, details),
         )
         conn.commit()
+        return cursor.lastrowid
     except sqlite3.Error as e:
         print(f"[DB ERROR] Failed to save detection: {e}")
+        return None
     finally:
         conn.close()
 
@@ -47,5 +57,16 @@ def get_all_detections() -> list:
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM detections ORDER BY id DESC")
         return cursor.fetchall()
+    finally:
+        conn.close()
+
+
+def get_detection_by_id(record_id: int):
+    """Return a single detection row by its primary key, or None if not found."""
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM detections WHERE id = ?", (record_id,))
+        return cursor.fetchone()
     finally:
         conn.close()
