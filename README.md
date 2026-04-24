@@ -1,359 +1,162 @@
-
+```
 ```
 ██████╗ ███████╗███████╗██████╗ ███████╗ █████╗ ██╗  ██╗███████╗
 ██╔══██╗██╔════╝██╔════╝██╔══██╗██╔════╝██╔══██╗██║ ██╔╝██╔════╝
-██║  ██║█████╗  █████╗  ██████╔╝█████╗  ███████║█████╔╝ █████╗
-██║  ██║██╔══╝  ██╔══╝  ██╔═══╝ ██╔══╝  ██╔══██║██╔═██╗ ██╔══╝
+██║  ██║█████╗  █████╗  ██████╔╝█████╗  ███████║█████╔╝ █████╗  
+██║  ██║██╔══╝  ██╔══╝  ██╔═══╝ ██╔══╝  ██╔══██║██╔═██╗ ██╔══╝  
 ██████╔╝███████╗███████╗██║     ██║     ██║  ██║██║  ██╗███████╗
 ╚═════╝ ╚══════╝╚══════╝╚═╝     ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
 
-██████╗ ███████╗████████╗███████╗ ██████╗████████╗ ██████╗ ██████╗
+██████╗ ███████╗████████╗███████╗ ██████╗████████╗ ██████╗ ██████╗ 
 ██╔══██╗██╔════╝╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗
 ██║  ██║█████╗     ██║   █████╗  ██║        ██║   ██║   ██║██████╔╝
 ██║  ██║██╔══╝     ██║   ██╔══╝  ██║        ██║   ██║   ██║██╔══██╗
-██████╔╝███████╗   ██║   ███████╗╚██████╗   ██║   ╚██████╔╝██║  ██║
+██████╔╝███████╗   ██║   ███████╗╚██████╗   ██║   ╚██████╔╝██║  ██╗
 ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
 ```
 
 <div align="center">
 
-> **AI-powered deepfake detection in your browser — upload, analyse, know the truth.**
+> **Next-Generation AI Forensic Platform — Multi-model ensemble detection for the modern web.**
 
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=flat-square&logo=python)](https://www.python.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.12%2B-orange?style=flat-square&logo=tensorflow)](https://www.tensorflow.org/)
-[![Flask](https://img.shields.io/badge/Flask-2.3%2B-black?style=flat-square&logo=flask)](https://flask.palletsprojects.com/)
-[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green?style=flat-square&logo=opencv)](https://opencv.org/)
-[![SQLite](https://img.shields.io/badge/SQLite-3-lightblue?style=flat-square&logo=sqlite)](https://www.sqlite.org/)
-[![License](https://img.shields.io/badge/License-MIT-purple?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.12%2B-orange?style=for-the-badge&logo=tensorflow)](https://www.tensorflow.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.3%2B-black?style=for-the-badge&logo=flask)](https://flask.palletsprojects.com/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8%2B-green?style=for-the-badge&logo=opencv)](https://opencv.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-lightblue?style=for-the-badge&logo=sqlite)](https://www.sqlite.org/)
 
 </div>
 
 ---
 
-## 🧠 What Is This?
+## 🧠 Overview
 
-**Deepfake Detector** is a full-stack AI application that uses a fine-tuned **MobileNetV2** convolutional neural network to determine whether a face image is **real** or **AI-generated (fake)**. Upload an image through the web interface and get an instant verdict — complete with a confidence score and a persistent history dashboard.
+**Deepfake Detector** is a high-performance, forensic-grade AI application designed to identify AI-generated (fake) face images with surgical precision. By leveraging a **Multi-Model Ensemble Architecture**, it cross-references predictions across three distinct neural networks—**MobileNetV2**, **ResNet50V2**, and **Xception**—to provide a highly reliable consensus verdict.
 
 ---
 
 ## ✨ Features
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     FEATURE OVERVIEW                        │
-├───────────────────────┬─────────────────────────────────────┤
-│  🔍 Smart Detection   │  MobileNetV2 transfer learning CNN  │
-│  🖼️  Image Preview    │  Drag-and-drop with live preview     │
-│  📊 History Dashboard │  SQLite-backed detection log        │
-│  🎯 Confidence Score  │  0–100% certainty per prediction    │
-│  🌙 Dark Mode         │  Respects system color scheme       │
-│  🔒 Secure Uploads    │  Extension validation + sanitization│
-│  📱 Responsive UI     │  Works on desktop & mobile          │
-│  ⚡ Fast Inference    │  ~100ms prediction on CPU           │
-└───────────────────────┴─────────────────────────────────────┘
-```
+### 🛡️ Multi-Model Ensemble
+- **Triple-Model Validation:** Uses MobileNetV2, ResNet50V2, and Xception backbones.
+- **Weighted Consensus:** Returns an aggregated confidence score based on the strengths of each model.
+- **Explainable Results:** Breakdown of how each individual model voted on the forensic analysis.
+
+### 📊 Advanced Analytics & UI
+- **Live Forensic Dashboard:** Real-time visualization of detection history with high-resolution previews.
+- **Statistical Intelligence:** Aggregated data on scan distributions, fake-vs-real ratios, and model performance metrics.
+- **Glassmorphism Design:** A modern, high-fidelity UI that respects system dark/light modes.
+- **Detailed Forensic View:** Drills down into specific detections with individual model results.
+
+### ⚡ Technical Excellence
+- **Hybrid Inference:** High-speed processing (~150ms per ensemble pass).
+- **SQLite Persistence:** Atomic storage of forensic records and metadata.
+- **Sanitized Upload Pipeline:** Enterprise-grade file handling and path-traversal protection.
 
 ---
 
 ## 🏗️ System Architecture
 
-```
-                        ┌──────────────────────────────────────┐
-                        │           USER'S BROWSER             │
-                        │                                      │
-                        │  ┌────────────────────────────────┐  │
-                        │  │        index.html              │  │
-                        │  │  ┌──────────┐  ┌───────────┐  │  │
-                        │  │  │ Upload   │  │  Result   │  │  │
-                        │  │  │  Form    │  │   Box     │  │  │
-                        │  │  └────┬─────┘  └─────▲─────┘  │  │
-                        │  │       │   script.js   │        │  │
-                        │  │       │  (drag,preview│valid.) │  │
-                        │  └───────┼───────────────┼────────┘  │
-                        └──────────┼───────────────┼───────────┘
-                                   │ POST /         │ HTML
-                                   ▼               │
-                        ┌──────────────────────────────────────┐
-                        │           FLASK SERVER               │
-                        │                                      │
-                        │  app.py                              │
-                        │  ┌────────────────────────────────┐  │
-                        │  │  @route("/")                   │  │
-                        │  │  1. Validate file (ext, size)  │  │
-                        │  │  2. secure_filename()          │  │
-                        │  │  3. Save to uploads/           │  │
-                        │  │  4. Call predict_image()  ─────┼──┼──┐
-                        │  │  5. save_detection()           │  │  │
-                        │  │  6. render_template()          │  │  │
-                        │  └────────────────────────────────┘  │  │
-                        │                                      │  │
-                        │  ┌────────────────────────────────┐  │  │
-                        │  │  @route("/dashboard")          │  │  │
-                        │  │  get_all_detections() ─────────┼──┼──┼──┐
-                        │  └────────────────────────────────┘  │  │  │
-                        └──────────────────────────────────────┘  │  │
-                                                                   │  │
-                   ┌───────────────────────────────────────────────┘  │
-                   │                                                   │
-                   ▼                                                   ▼
-        ┌──────────────────────┐                         ┌────────────────────┐
-        │   ML PIPELINE        │                         │     DATABASE       │
-        │                      │                         │                    │
-        │  image_processing.py │                         │  history.db        │
-        │  ┌──────────────┐    │                         │  ┌──────────────┐  │
-        │  │ cv2.imread() │    │                         │  │  detections  │  │
-        │  │ BGR → RGB    │    │                         │  │  ─────────── │  │
-        │  │ Face Detect  │    │                         │  │  id          │  │
-        │  │ (Haar casc.) │    │                         │  │  filename    │  │
-        │  └──────┬───────┘    │                         │  │  result      │  │
-        │         │            │                         │  │  confidence  │  │
-        │  predictor.py        │                         │  │  date        │  │
-        │  ┌──────▼───────┐    │                         │  └──────────────┘  │
-        │  │preprocess_   │    │                         └────────────────────┘
-        │  │  input()     │    │
-        │  │ model.predict│    │
-        │  │ label+conf   │    │
-        │  └──────────────┘    │
-        │                      │
-        │  dataset/model/      │
-        │  deepfake_model.h5   │
-        └──────────────────────┘
+```text
+                        ┌─────────────────────────────────────────────────┐
+                        │              MODERN WEB INTERFACE               │
+                        │   (Scan · History · Analytics · Settings)       │
+                        └────────┬───────────────────────▲────────────────┘
+                                 │ POST /image           │ JSON / HTML
+                                 ▼                       │
+                        ┌────────────────────────────────┴────────────────┐
+                        │               FLASK ENGINE (app.py)             │
+                        │  ┌────────────┐  ┌─────────────┐  ┌──────────┐  │
+                        │  │ Validator  │  │ Predictor   │  │ DB Layer │  │
+                        │  └────────────┘  └──────┬──────┘  └─────┬────┘  │
+                        └─────────────────────────┼───────────────┼───────┘
+                                                  │               │
+            ┌─────────────────────────────────────▼───────┐       │
+            │           MULTI-MODEL ENSEMBLE              │       │
+            │  ┌────────────┐┌────────────┐┌────────────┐ │       ▼
+            │  │ MobileNetV2││ ResNet50V2 ││  Xception  │ │   ┌─────────┐
+            │  └─────┬──────┘└─────┬──────┘└─────┬──────┘ │   │ SQLite  │
+            │        │             │             │        │   │ (DB)    │
+            │        └─────────────┼─────────────┘        │   └─────────┘
+            │                      ▼                      │
+            │            ENSMEMBLE CONSENSUS              │
+            └─────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🤖 ML Pipeline
+## 🔬 Deep Learning Pipeline
 
-```
-  TRAINING PHASE                              INFERENCE PHASE
-  ─────────────                              ───────────────
+### 1. Training Phase (`train_ensemble.py`)
+The system employs **Transfer Learning** from ImageNet-pretrained weights. Each model is fine-tuned on a custom dataset of 100,000+ real and fake face images.
+- **MobileNetV2:** Lightweight, focuses on high-level spatial features.
+- **ResNet50V2:** Uses skip-connections to retain fine-grained detail.
+- **Xception:** Utilizes depthwise separable convolutions for superior accuracy.
 
-  dataset/train/                             User uploads image
-  ├── real/  (real faces)                            │
-  └── fake/  (AI-generated faces)                    ▼
-        │                                   ┌─────────────────┐
-        ▼                                   │  cv2.imread()   │
-  ImageDataGenerator                        │  BGR → RGB      │
-  ┌─────────────────────┐                   └────────┬────────┘
-  │ preprocess_input()  │                            │
-  │ rotation_range=15°  │                            ▼
-  │ horizontal_flip     │                   ┌─────────────────┐
-  │ zoom_range=0.1      │                   │  Haar Cascade   │
-  └────────┬────────────┘                   │  Face Detection │
-           │                                └────────┬────────┘
-           ▼                                         │
-  ┌─────────────────────┐                            ▼
-  │    MobileNetV2      │                   ┌─────────────────┐
-  │  (ImageNet weights) │                   │ Resize 224×224  │
-  │  trainable=False    │                   │ preprocess_     │
-  └────────┬────────────┘                   │   input()       │
-           │                                └────────┬────────┘
-           ▼                                         │
-  GlobalAveragePooling2D                             ▼
-           │                                ┌─────────────────┐
-           ▼                                │  MobileNetV2    │──── frozen
-  Dense(128, relu)                          │  feature extrac │     weights
-           │                                └────────┬────────┘
-           ▼                                         │
-      Dropout(0.3)                                   ▼
-           │                                ┌─────────────────┐
-           ▼                                │  Dense(1)       │
-  Dense(1, sigmoid)                         │  sigmoid output │
-           │                                └────────┬────────┘
-           ▼                                         │
-  Binary Cross-Entropy                               ▼
-  Adam Optimizer                             p_real = output[0]
-           │                                         │
-           ▼                               ┌─────────┴──────────┐
-  ModelCheckpoint                          │                    │
-  EarlyStopping                      p > 0.5              p ≤ 0.5
-           │                          "Real Image"        "Fake Image"
-           ▼                          conf = p*100      conf=(1-p)*100
-  deepfake_model.h5
-```
+### 2. Inference Phase (`predictor.py`)
+1. **Face Detection:** OpenCV Haar Cascades isolate the facial region to reduce noise.
+2. **Standardization:** Images are normalized to 224x224x3 and preprocessed per-model requirements.
+3. **Parallel Inference:** All three models run a forward pass simultaneously.
+4. **Aggregation:** The results are averaged to mitigate single-model biases.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```bash
 Deepfake Detector/
-│
-├── 📄 app.py                    ← Flask entry point & routes
-├── 📄 database.py               ← SQLite helpers (init, save, fetch)
-├── 📄 train_model.py            ← Model training script
-├── 📄 requirements.txt          ← Pinned dependencies
-├── 📄 history.db                ← Auto-created SQLite database
-├── 📄 README.md                 ← You are here!
+├── 📄 app.py                  # Main Flask application & routes
+├── 📄 database.py             # SQLite database operations
+├── 📄 train_ensemble.py       # Orchestrator for training the 3-model suite
+├── 📄 train_model.py          # Legacy single-model trainer
+├── 📄 requirements.txt        # Pinned project dependencies
+├── 📄 history.db              # Persistence layer
 │
 └── 📂 dataset/
+    ├── 📂 model/              # Trained weights (*.h5)
+    │   ├── 🧠 deepfake_model.h5 (MobileNetV2)
+    │   ├── 🧠 resnet_model.h5
+    │   └── 🧠 xception_model.h5
     │
-    ├── 📂 model/
-    │   └── 🧠 deepfake_model.h5     ← Trained Keras model (~11 MB)
-    │
-    ├── 📂 train/                    ← Training images
-    │   ├── 📂 fake/                 ← AI-generated face images
-    │   └── 📂 real/                 ← Authentic face images
-    │
-    ├── 📂 validation/               ← Validation images
-    │   ├── 📂 fake/
-    │   └── 📂 real/
-    │
-    ├── 📂 templates/
-    │   ├── 🌐 index.html            ← Upload page
-    │   └── 🌐 dashboard.html        ← Detection history
-    │
-    ├── 📂 static/
-    │   ├── 📂 css/
-    │   │   └── 🎨 style.css         ← Styles + dark mode
-    │   ├── 📂 js/
-    │   │   └── ⚡ script.js          ← Drag-drop, preview, validation
-    │   └── 📂 uploads/              ← Saved user-uploaded images
+    ├── 📂 templates/          # Jinja2 modern UI components
+    │   ├── 🌐 index.html      # Unified Dashboard
+    │   ├── 🌐 analytics.html  # Stats & Visualization
+    │   └── 🌐 analysis.html   # Detailed Record View
     │
     └── 📂 utils/
-        ├── 🐍 image_processing.py   ← Face extraction (Haar cascade)
-        └── 🐍 predictor.py          ← Model load & inference
+        ├── 🐍 image_processing.py  # Computer Vision utilities
+        └── 🐍 predictor.py         # Ensemble inference engine
 ```
 
 ---
 
-## 🛠️ Tech Stack
+## 🚀 Installation & Deployment
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                        TECH STACK                            │
-├────────────────┬─────────────────────────────────────────────┤
-│  Layer         │  Technology                                  │
-├────────────────┼─────────────────────────────────────────────┤
-│  Deep Learning │  TensorFlow 2.12+ / Keras                   │
-│  Base Model    │  MobileNetV2 (ImageNet pretrained)          │
-│  Face Detect   │  OpenCV Haar Cascade                        │
-│  Web Framework │  Flask 2.3+                                 │
-│  Database      │  SQLite 3 (via Python sqlite3)              │
-│  Image I/O     │  OpenCV, Pillow, NumPy                      │
-│  Frontend      │  Vanilla HTML5 + CSS3 + JavaScript ES6      │
-│  Dashboard CSS │  Tailwind CSS (CDN)                         │
-└────────────────┴─────────────────────────────────────────────┘
-```
-
----
-
-## 🚀 Quick Start
-
-### 1 · Prerequisites
-
-```
-Python 3.10 or higher  ──►  https://www.python.org/downloads/
-Git                    ──►  https://git-scm.com/
-```
-
-### 2 · Clone & Set Up Virtual Environment
-
+### 1. Environment Setup
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/deepfake-detector.git
-cd deepfake-detector
+git clone https://github.com/secureDhruv/Deepfake-Detection-System.git
+cd Deepfake-Detection-System
 
-# Create and activate virtual environment
+# Setup Virtual Environment
 python -m venv venv
+# Win: venv\Scripts\activate | Unix: source venv/bin/activate
 
-# Windows
-venv\Scripts\activate
-
-# macOS / Linux
-source venv/bin/activate
-```
-
-### 3 · Install Dependencies
-
-```bash
+# Install requirements
 pip install -r requirements.txt
 ```
 
-### 4 · Download the Model & Dataset from Google Drive
-
-Because the model weights and training datasets are extremely large, they are not hosted on GitHub. You should download the **assets zip file** directly from Google Drive.
-
-1. **Download the Zip**
-   * [Click here to download `deepfake_assets.zip`](YOUR_GOOGLE_DRIVE_PUBLIC_LINK_HERE)
-
-2. **Extract the Assets**  
-   Extract the contents of the zip file into the `dataset/` directory. Once extracted, your structure MUST look like this:
-
-```text
-Deepfake Detector/
-└── dataset/
-    ├── model/
-    │   └── deepfake_model.h5     ← The 11 MB Keras model
-    ├── train/
-    │   ├── fake/                 ← AI-generated background images
-    │   └── real/                 ← Authentic faces
-    └── validation/
-        ├── fake/
-        └── real/
-```
-
-### 5 · Train the Model
-
+### 2. Model Initialization
+If you are starting fresh, you must train the ensemble to generate the model files:
 ```bash
-python train_model.py
+python train_ensemble.py
 ```
+*Note: This will train MobileNetV2, ResNet50V2, and Xception in sequence.*
 
-```
-Expected output:
-  Class indices: {'fake': 0, 'real': 1}
-  Epoch 1/20 ────────────── loss: 0.6821 - accuracy: 0.5873 - val_accuracy: 0.6210
-  Epoch 2/20 ────────────── loss: 0.5914 - accuracy: 0.6892 - val_accuracy: 0.7140
-  ...
-  Epoch 8/20: val_accuracy did not improve. Early stopping.
-  Model saved to: dataset/model/deepfake_model.h5
-```
-
-> **Note:** Training uses `ModelCheckpoint` — only the best epoch is saved.
-> `EarlyStopping` will halt training automatically when accuracy plateaus.
-
-### 6 · Launch the Web App
-
+### 3. Launch the Platform
 ```bash
 python app.py
 ```
-
-```
- * Running on http://127.0.0.1:5000
- * Debug mode: on
-```
-
-Open your browser and navigate to **`http://127.0.0.1:5000`** 🎉
-
----
-
-## 🌐 Web Interface
-
-### Home Page — Upload & Detect
-
-```
-┌─────────────────────────────────────┐
-│          🔍 AI Deepfake Detector    │
-│   Upload an image to check if it's  │
-│       AI-generated or real.         │
-│                                     │
-│  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐  │
-│       🖼️  Click or drag here        │
-│  │   PNG, JPG or WEBP · Max 10 MB │ │
-│   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │
-│                                     │
-│  ✓ my_photo.jpg                     │
-│  [image preview thumbnail]          │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │  ⟳  Analysing…             │   │
-│  └─────────────────────────────┘   │
-│                                     │
-│  ┌─────────────────────────────┐   │
-│  │ ✅  Real Image  · 91.4%    │   │  ← green
-│  └─────────────────────────────┘   │
-│                                     │
-│  📊 View Detection History          │
 └─────────────────────────────────────┘
 ```
 
