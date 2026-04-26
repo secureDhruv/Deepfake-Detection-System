@@ -5,4 +5,4 @@ scipy==1.17.1
 flask
 opencv-python-headless
 pillow
-tensorflow
+tensorflow-cpu==2.13.0
