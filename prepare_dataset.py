@@ -1,71 +1,126 @@
 """
-prepare_dataset.py
-------------------
-Copies images from the downloaded dataset into the correct folder structure
-for train_model.py.
+Prepare a binary image dataset for the deepfake detector.
+
+Expected source layout by default:
+    <source>/ai_images
+    <source>/real
+
+The script creates disjoint train/validation splits under:
+    dataset/train/fake
+    dataset/train/real
+    dataset/validation/fake
+    dataset/validation/real
 """
 
+import argparse
 import os
-import sys
-import shutil
 import random
+import shutil
+import sys
 
-# Force stdout to be utf-8 immune or just use pure ascii in prints
-sys.stdout.reconfigure(encoding='utf-8') if hasattr(sys.stdout, 'reconfigure') else None
+SUPPORTED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
+DEFAULT_SOURCE = os.environ.get(
+    "DEEPFAKE_DATASET_SRC",
+    r"C:\Users\dhruv\Downloads\archive (1)\my_real_vs_ai_dataset\my_real_vs_ai_dataset",
+)
 
-# ── Config ─────────────────────────────────────────────────────────────────────
-TRAIN_PER_CLASS  = 5000   
-VAL_PER_CLASS    = 1000   
-SEED = 42  
+BASE_DST = os.path.dirname(os.path.abspath(__file__))
+TRAIN_FAKE_DST = os.path.join(BASE_DST, "dataset", "train", "fake")
+TRAIN_REAL_DST = os.path.join(BASE_DST, "dataset", "train", "real")
+VAL_FAKE_DST = os.path.join(BASE_DST, "dataset", "validation", "fake")
+VAL_REAL_DST = os.path.join(BASE_DST, "dataset", "validation", "real")
 
-BASE_SRC   = r"C:\Users\dhruv\Downloads\archive (1)\my_real_vs_ai_dataset\my_real_vs_ai_dataset"
-FAKE_SRC   = os.path.join(BASE_SRC, "ai_images")
-REAL_SRC   = os.path.join(BASE_SRC, "real")
 
-BASE_DST        = os.path.dirname(os.path.abspath(__file__))
-TRAIN_FAKE_DST  = os.path.join(BASE_DST, "dataset", "train", "fake")
-TRAIN_REAL_DST  = os.path.join(BASE_DST, "dataset", "train", "real")
-VAL_FAKE_DST    = os.path.join(BASE_DST, "dataset", "validation", "fake")
-VAL_REAL_DST    = os.path.join(BASE_DST, "dataset", "validation", "real")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Prepare train/validation folders.")
+    parser.add_argument("--source", default=DEFAULT_SOURCE, help="Root folder containing fake and real image folders.")
+    parser.add_argument("--fake-subdir", default="ai_images", help="Fake image subfolder name under --source.")
+    parser.add_argument("--real-subdir", default="real", help="Real image subfolder name under --source.")
+    parser.add_argument("--train-per-class", type=int, default=5000)
+    parser.add_argument("--val-per-class", type=int, default=1000)
+    parser.add_argument("--seed", type=int, default=42)
+    return parser.parse_args()
 
-def clear_folder(folder: str):
+
+def clear_folder(folder: str) -> None:
     if os.path.exists(folder):
-        for f in os.listdir(folder):
-            fp = os.path.join(folder, f)
-            if os.path.isfile(fp):
-                os.remove(fp)
+        for name in os.listdir(folder):
+            path = os.path.join(folder, name)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.remove(path)
     os.makedirs(folder, exist_ok=True)
 
-def copy_images(src_folder: str, dst_folder: str, n: int, label: str):
-    all_files = [f for f in os.listdir(src_folder) if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp"))]
-    if len(all_files) < n:
-        print(f"  [WARN] Only {len(all_files)} images in {src_folder}, using all of them.")
-        n = len(all_files)
 
-    chosen = random.sample(all_files, n)
-    for fname in chosen:
-        shutil.copy2(os.path.join(src_folder, fname), os.path.join(dst_folder, fname))
-    print(f"  [OK] Copied {n} {label} images -> {dst_folder}")
+def list_images(src_folder: str) -> list[str]:
+    if not os.path.isdir(src_folder):
+        raise FileNotFoundError(f"Source folder not found: {src_folder}")
 
-def main():
-    random.seed(SEED)
+    files = [
+        name
+        for name in os.listdir(src_folder)
+        if name.lower().endswith(SUPPORTED_EXTENSIONS)
+    ]
+    if not files:
+        raise ValueError(f"No supported images found in: {src_folder}")
+    return files
+
+
+def split_files(files: list[str], train_count: int, val_count: int, label: str) -> tuple[list[str], list[str]]:
+    needed = train_count + val_count
+    if len(files) < needed:
+        print(f"  [WARN] {label}: requested {needed} images, found {len(files)}.")
+        train_count = min(train_count, len(files))
+        val_count = max(0, min(val_count, len(files) - train_count))
+
+    chosen = random.sample(files, train_count + val_count)
+    return chosen[:train_count], chosen[train_count:]
+
+
+def copy_images(src_folder: str, dst_folder: str, files: list[str], label: str) -> None:
+    for name in files:
+        shutil.copy2(os.path.join(src_folder, name), os.path.join(dst_folder, name))
+    print(f"  [OK] Copied {len(files)} {label} images -> {dst_folder}")
+
+
+def main() -> int:
+    args = parse_args()
+    random.seed(args.seed)
+
+    fake_src = os.path.join(args.source, args.fake_subdir)
+    real_src = os.path.join(args.source, args.real_subdir)
+
     print("\n[INFO] Preparing dataset folders...")
     for folder in [TRAIN_FAKE_DST, TRAIN_REAL_DST, VAL_FAKE_DST, VAL_REAL_DST]:
         print(f"  Clearing: {folder}")
         clear_folder(folder)
 
-    print("\n[COPY] Copying FAKE images (from ai_images/)...")
-    copy_images(FAKE_SRC, TRAIN_FAKE_DST, TRAIN_PER_CLASS, "fake-train")
-    copy_images(FAKE_SRC, VAL_FAKE_DST,   VAL_PER_CLASS,   "fake-val")
+    try:
+        fake_files = list_images(fake_src)
+        real_files = list_images(real_src)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"\n[ERROR] {exc}")
+        print("        Pass --source or set DEEPFAKE_DATASET_SRC to your dataset root.")
+        return 1
 
-    print("\n[COPY] Copying REAL images (from real/)...")
-    copy_images(REAL_SRC, TRAIN_REAL_DST, TRAIN_PER_CLASS, "real-train")
-    copy_images(REAL_SRC, VAL_REAL_DST,   VAL_PER_CLASS,   "real-val")
+    fake_train, fake_val = split_files(fake_files, args.train_per_class, args.val_per_class, "fake")
+    real_train, real_val = split_files(real_files, args.train_per_class, args.val_per_class, "real")
 
-    print("\n[DONE] Dataset ready! Summary:")
-    print(f"   Train  -> fake: {len(os.listdir(TRAIN_FAKE_DST))} | real: {len(os.listdir(TRAIN_REAL_DST))}")
-    print(f"   Val    -> fake: {len(os.listdir(VAL_FAKE_DST))} | real: {len(os.listdir(VAL_REAL_DST))}")
-    print("\n[NEXT] Now run: python train_model.py")
+    print("\n[COPY] Copying fake images...")
+    copy_images(fake_src, TRAIN_FAKE_DST, fake_train, "fake-train")
+    copy_images(fake_src, VAL_FAKE_DST, fake_val, "fake-val")
+
+    print("\n[COPY] Copying real images...")
+    copy_images(real_src, TRAIN_REAL_DST, real_train, "real-train")
+    copy_images(real_src, VAL_REAL_DST, real_val, "real-val")
+
+    print("\n[DONE] Dataset ready. Summary:")
+    print(f"   Train -> fake: {len(os.listdir(TRAIN_FAKE_DST))} | real: {len(os.listdir(TRAIN_REAL_DST))}")
+    print(f"   Val   -> fake: {len(os.listdir(VAL_FAKE_DST))} | real: {len(os.listdir(VAL_REAL_DST))}")
+    print("\n[NEXT] Run: python train_ensemble.py")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

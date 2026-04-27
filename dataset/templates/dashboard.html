@@ -266,13 +266,17 @@
   document.getElementById('confirm-delete-btn').addEventListener('click', function () {
     if (!pendingDeleteId) return;
     const row = document.getElementById('row-' + pendingDeleteId);
-    if (row) {
-      row.classList.add('removing');
-      setTimeout(function () { row.remove(); }, 360);
-    }
-    // Hit the real backend to delete from DB
-    fetch('/delete/' + pendingDeleteId, { method: 'POST' });
-    closeDeleteModal();
+    fetch('/delete/' + pendingDeleteId, { method: 'POST' }).then(function(response) {
+      if (!response.ok) throw new Error('Delete failed');
+      if (row) {
+        row.classList.add('removing');
+        setTimeout(function () { row.remove(); }, 360);
+      }
+      closeDeleteModal();
+    }).catch(function() {
+      closeDeleteModal();
+      window.location.reload();
+    });
   });
 
   // Close modal when clicking overlay background

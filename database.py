@@ -20,9 +20,11 @@ def init_db():
         )
         """)
         
-        # Upgrade existing database schema safely
+        # Upgrade existing database schema safely.
         cursor.execute("PRAGMA table_info(detections)")
         columns = [info[1] for info in cursor.fetchall()]
+        if 'confidence' not in columns:
+            cursor.execute("ALTER TABLE detections ADD COLUMN confidence REAL")
         if 'details' not in columns:
             cursor.execute("ALTER TABLE detections ADD COLUMN details TEXT")
             
@@ -68,5 +70,27 @@ def get_detection_by_id(record_id: int):
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM detections WHERE id = ?", (record_id,))
         return cursor.fetchone()
+    finally:
+        conn.close()
+
+
+def delete_detection(record_id: int) -> bool:
+    """Delete one detection row and return whether anything was removed."""
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM detections WHERE id = ?", (record_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        conn.close()
+
+
+def clear_detections() -> None:
+    """Delete all detection records."""
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.execute("DELETE FROM detections")
+        conn.commit()
     finally:
         conn.close()

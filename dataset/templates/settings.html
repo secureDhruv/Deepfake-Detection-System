@@ -453,7 +453,7 @@
                   <div class="setting-label">Active Model</div>
                   <div class="setting-desc">The neural network architecture currently powering detections</div>
                 </div>
-                <span class="tag tag-cyan">MobileNetV2</span>
+                <span class="tag tag-cyan">Ensemble / MobileNetV2 / ResNet50V2 / Xception</span>
               </div>
 
               <div class="setting-row">
@@ -502,7 +502,7 @@
 
             <div class="info-box">
               <span class="info-box-icon">&#9432;</span>
-              <span>Model file is stored at <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">dataset/model/deepfake_model.h5</code>. Retrain using <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">python train_model.py</code> to apply new settings.</span>
+              <span>Model files are stored in <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">dataset/model/</code>. Retrain using <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">python train_ensemble.py</code>.</span>
             </div>
           </div>
 
@@ -514,8 +514,8 @@
 
               <div class="setting-row">
                 <div class="setting-info">
-                  <div class="setting-label">Show Heatmap by Default</div>
-                  <div class="setting-desc">Auto-enable heatmap overlay when opening analysis results</div>
+                  <div class="setting-label">Show Visual Overlay by Default</div>
+                  <div class="setting-desc">Auto-enable the visual overlay when opening analysis results</div>
                 </div>
                 <label class="setting-toggle">
                   <input type="checkbox" id="heatmap-default" checked />
@@ -664,7 +664,7 @@
                 </div>
                 <div class="about-item">
                   <div class="about-item-label">Model</div>
-                  <div class="about-item-value">MobileNetV2</div>
+                  <div class="about-item-value">Ensemble</div>
                 </div>
                 <div class="about-item">
                   <div class="about-item-label">Database</div>
@@ -672,7 +672,7 @@
                 </div>
                 <div class="about-item">
                   <div class="about-item-label">Model Size</div>
-                  <div class="about-item-value">~11 MB</div>
+                  <div class="about-item-value">~185 MB</div>
                 </div>
                 <div class="about-item">
                   <div class="about-item-label">Status</div>

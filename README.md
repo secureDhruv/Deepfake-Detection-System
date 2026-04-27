@@ -17,7 +17,7 @@
 
 <div align="center">
 
-> **Next-Generation AI Forensic Platform — Multi-model ensemble detection for the modern web.**
+> **Deepfake image detection with a Flask interface and a TensorFlow/Keras ensemble.**
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.12%2B-orange?style=for-the-badge&logo=tensorflow)](https://www.tensorflow.org/)
@@ -31,7 +31,7 @@
 
 ## 🧠 Overview
 
-**Deepfake Detector** is a high-performance, forensic-grade AI application designed to identify AI-generated (fake) face images with surgical precision. By leveraging a **Multi-Model Ensemble Architecture**, it cross-references predictions across three distinct neural networks—**MobileNetV2**, **ResNet50V2**, and **Xception**—to provide a highly reliable consensus verdict.
+**Deepfake Detector** identifies AI-generated face images by averaging predictions from three TensorFlow/Keras classifiers: **MobileNetV2**, **ResNet50V2**, and **Xception**. The Flask app handles image upload, preprocessing, model inference, result storage, and a browser-based history/analytics UI.
 
 ---
 
@@ -39,7 +39,7 @@
 
 ### 🛡️ Multi-Model Ensemble
 - **Triple-Model Validation:** Uses MobileNetV2, ResNet50V2, and Xception backbones.
-- **Weighted Consensus:** Returns an aggregated confidence score based on the strengths of each model.
+- **Soft-Voting Consensus:** Returns an aggregated confidence score from the available model probabilities.
 - **Explainable Results:** Breakdown of how each individual model voted on the forensic analysis.
 
 ### 📊 Advanced Analytics & UI
@@ -49,7 +49,7 @@
 - **Detailed Forensic View:** Drills down into specific detections with individual model results.
 
 ### ⚡ Technical Excellence
-- **Hybrid Inference:** High-speed processing (~150ms per ensemble pass).
+- **Lazy Model Loading:** TensorFlow models are loaded on the first prediction instead of every page import.
 - **SQLite Persistence:** Atomic storage of forensic records and metadata.
 - **Sanitized Upload Pipeline:** Enterprise-grade file handling and path-traversal protection.
 
@@ -88,7 +88,7 @@
 ## 🔬 Deep Learning Pipeline
 
 ### 1. Training Phase (`train_ensemble.py`)
-The system employs **Transfer Learning** from ImageNet-pretrained weights. Each model is fine-tuned on a custom dataset of 100,000+ real and fake face images.
+The system employs **Transfer Learning** from ImageNet-pretrained weights. Each model is trained on the prepared real/fake image folders under `dataset/train` and validated on the disjoint split under `dataset/validation`.
 - **MobileNetV2:** Lightweight, focuses on high-level spatial features.
 - **ResNet50V2:** Uses skip-connections to retain fine-grained detail.
 - **Xception:** Utilizes depthwise separable convolutions for superior accuracy.
@@ -96,8 +96,8 @@ The system employs **Transfer Learning** from ImageNet-pretrained weights. Each 
 ### 2. Inference Phase (`predictor.py`)
 1. **Face Detection:** OpenCV Haar Cascades isolate the facial region to reduce noise.
 2. **Standardization:** Images are normalized to 224x224x3 and preprocessed per-model requirements.
-3. **Parallel Inference:** All three models run a forward pass simultaneously.
-4. **Aggregation:** The results are averaged to mitigate single-model biases.
+3. **Inference:** Available models run a forward pass with architecture-specific preprocessing.
+4. **Aggregation:** The probabilities are averaged to mitigate single-model bias.
 
 ---
 
@@ -207,7 +207,7 @@ python app.py
 | `SECRET_KEY` | `change-me-before-deploying` | Flask session secret. Set via env var in production. |
 | `MAX_CONTENT_LENGTH` | `10 MB` | Maximum upload file size |
 | `ALLOWED_EXTENSIONS` | `png, jpg, jpeg, webp` | Accepted image formats |
-| `MODEL_PATH` | `dataset/model/deepfake_model.h5` | Path to the trained Keras model |
+| `MODEL_DIR` | `dataset/model/` | Folder containing the ensemble `.h5` model files |
 | `DB_PATH` | `history.db` | SQLite database path |
 
 ---
@@ -220,7 +220,8 @@ CREATE TABLE detections (
     filename   TEXT,                              -- sanitized upload filename
     result     TEXT,                              -- "Real Image" | "Fake Image"
     confidence REAL,                              -- 0.0 – 100.0
-    date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    details    TEXT                               -- JSON per-model prediction details
 );
 ```
 

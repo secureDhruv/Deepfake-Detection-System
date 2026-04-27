@@ -131,6 +131,7 @@ def generate_model(config: dict, force: bool = False) -> bool:
     """
     name      = config["name"]
     save_path = config["save_path"]
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     if os.path.exists(save_path) and not force:
         size_mb = os.path.getsize(save_path) / (1024 * 1024)
@@ -140,7 +141,7 @@ def generate_model(config: dict, force: bool = False) -> bool:
     print(f"  [BUILD] {name:12s} -> building model architecture ...")
     t0    = time.time()
     model = build_dummy_model(config["class"])
-    model.save(save_path)
+    model.save(save_path, include_optimizer=False)
     elapsed = time.time() - t0
 
     size_mb = os.path.getsize(save_path) / (1024 * 1024)

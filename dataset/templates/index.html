@@ -405,7 +405,7 @@
           <div style="display: flex; gap: 10px; margin-top: 10px;">
             {% if new_record_id %}
             <a class="dashboard-link" href="/analysis/{{ new_record_id }}" style="flex: 1; border-color: rgba(0, 242, 255, 0.5); color: var(--cyan); background: rgba(0, 242, 255, 0.05);">
-              &#128065; Heatmap View
+              &#128065; Analysis View
             </a>
             {% endif %}
             <a class="dashboard-link" href="/dashboard" style="flex: 1;">
@@ -499,7 +499,7 @@
 
               <div class="info-box">
                 <span class="info-box-icon">&#9432;</span>
-                <span>Model stored at <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">dataset/model/deepfake_model.h5</code>. Retrain with <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">python train_model.py</code>.</span>
+                <span>Models are stored in <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">dataset/model/</code>. Retrain the ensemble with <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">python train_ensemble.py</code>.</span>
               </div>
             </div>
 
@@ -511,8 +511,8 @@
 
                 <div class="setting-row">
                   <div class="setting-info">
-                    <div class="setting-label">Heatmap Overlay by Default</div>
-                    <div class="setting-desc">Auto-enable heatmap when opening analysis results</div>
+                    <div class="setting-label">Visual Overlay by Default</div>
+                    <div class="setting-desc">Auto-enable the visual overlay when opening analysis results</div>
                   </div>
                   <label class="setting-toggle">
                     <input type="checkbox" id="heatmap-default" checked />
@@ -631,9 +631,9 @@
                   <div class="about-item"><div class="about-item-label">Version</div><div class="about-item-value">1.0.0</div></div>
                   <div class="about-item"><div class="about-item-label">Backend</div><div class="about-item-value">Flask + Python</div></div>
                   <div class="about-item"><div class="about-item-label">ML Framework</div><div class="about-item-value">TensorFlow 2.x</div></div>
-                  <div class="about-item"><div class="about-item-label">Model</div><div class="about-item-value">MobileNetV2</div></div>
+                  <div class="about-item"><div class="about-item-label">Model</div><div class="about-item-value">Ensemble</div></div>
                   <div class="about-item"><div class="about-item-label">Database</div><div class="about-item-value">SQLite 3</div></div>
-                  <div class="about-item"><div class="about-item-label">Model Size</div><div class="about-item-value">~11 MB</div></div>
+                  <div class="about-item"><div class="about-item-label">Model Size</div><div class="about-item-value">~185 MB</div></div>
                   <div class="about-item"><div class="about-item-label">Status</div><div class="about-item-value" style="color:var(--green);">&#9679; Online</div></div>
                 </div>
               </div>

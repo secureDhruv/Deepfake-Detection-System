@@ -14,6 +14,8 @@ VAL_DIR    = os.path.join(BASE_DIR, "dataset", "validation")
 MODEL_DIR  = os.path.join(BASE_DIR, "dataset", "model")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
+EXPECTED_CLASS_INDICES = {"fake": 0, "real": 1}
+
 # ── Ensemble Configuration ──────────────────────────────────────────────────────
 MODELS_TO_TRAIN = [
     {
@@ -36,6 +38,36 @@ MODELS_TO_TRAIN = [
     }
 ]
 
+def validate_dataset():
+    required_folders = [
+        os.path.join(TRAIN_DIR, "fake"),
+        os.path.join(TRAIN_DIR, "real"),
+        os.path.join(VAL_DIR, "fake"),
+        os.path.join(VAL_DIR, "real"),
+    ]
+    for folder in required_folders:
+        if not os.path.isdir(folder):
+            raise FileNotFoundError(f"Missing dataset folder: {folder}")
+
+    for label in ["fake", "real"]:
+        train_names = set(os.listdir(os.path.join(TRAIN_DIR, label)))
+        val_names = set(os.listdir(os.path.join(VAL_DIR, label)))
+        overlap = train_names & val_names
+        if overlap:
+            raise ValueError(
+                f"Dataset leakage detected for '{label}': {len(overlap)} filenames "
+                "exist in both train and validation. Regenerate with prepare_dataset.py."
+            )
+
+
+def assert_class_mapping(class_indices):
+    if class_indices != EXPECTED_CLASS_INDICES:
+        raise ValueError(
+            f"Unexpected class mapping {class_indices}. Expected {EXPECTED_CLASS_INDICES}; "
+            "prediction code assumes sigmoid output is P(real)."
+        )
+
+
 def train_model_pipeline(config):
     print(f"\n========================================")
     print(f"  Training {config['name']}...")
@@ -53,11 +85,21 @@ def train_model_pipeline(config):
     val_gen = ImageDataGenerator(preprocessing_function=config['preprocess'])
 
     train_data = train_gen.flow_from_directory(
-        TRAIN_DIR, target_size=(224, 224), batch_size=32, class_mode="binary"
+        TRAIN_DIR,
+        target_size=(224, 224),
+        batch_size=32,
+        class_mode="binary",
+        seed=42,
     )
     val_data = val_gen.flow_from_directory(
-        VAL_DIR, target_size=(224, 224), batch_size=32, class_mode="binary"
+        VAL_DIR,
+        target_size=(224, 224),
+        batch_size=32,
+        class_mode="binary",
+        shuffle=False,
     )
+    print("Class indices:", train_data.class_indices)
+    assert_class_mapping(train_data.class_indices)
 
     # 2. Build Model
     base_model = config['class'](input_shape=(224, 224, 3), include_top=False, weights="imagenet")
@@ -85,6 +127,7 @@ def train_model_pipeline(config):
     print(f"Finished training {config['name']}. Saved to {config['save_path']}")
 
 if __name__ == "__main__":
+    validate_dataset()
     for m_config in MODELS_TO_TRAIN:
         train_model_pipeline(m_config)
     print("\n[SUCCESS] Ensemble training complete!")

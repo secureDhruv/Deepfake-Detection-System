@@ -1,9 +1,18 @@
 import os
 import json
+import uuid
 from flask import Flask, render_template, request, redirect, url_for, flash
+from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
 from dataset.utils.predictor import predict_image, get_loaded_model_names
-from database import init_db, save_detection, get_all_detections, get_detection_by_id
+from database import (
+    init_db,
+    save_detection,
+    get_all_detections,
+    get_detection_by_id,
+    delete_detection,
+    clear_detections,
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -19,11 +28,40 @@ app.secret_key = os.environ.get("SECRET_KEY", "change-me-before-deploying")
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "dataset", "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
 def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def unique_upload_filename(original_filename: str) -> str:
+    """Return a sanitized, collision-resistant filename for the upload folder."""
+    filename = secure_filename(original_filename)
+    if not filename:
+        raise ValueError("Invalid filename.")
+
+    stem, ext = os.path.splitext(filename)
+    stem = (stem or "upload")[:80]
+    ext = ext.lower()
+
+    while True:
+        candidate = f"{stem}_{uuid.uuid4().hex[:12]}{ext}"
+        if not os.path.exists(os.path.join(UPLOAD_FOLDER, candidate)):
+            return candidate
+
+
+def validate_saved_image(filepath: str) -> None:
+    """Verify that the uploaded file is a real image before running inference."""
+    from PIL import Image, UnidentifiedImageError
+
+    try:
+        with Image.open(filepath) as img:
+            img.verify()
+    except (OSError, UnidentifiedImageError) as exc:
+        raise ValueError("Uploaded file is not a valid image.") from exc
+
 
 # Initialize database
 init_db()
@@ -37,10 +75,19 @@ def inject_engine_models():
     """
     return {"engine_models": get_loaded_model_names()}
 
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_upload(_error):
+    flash("File too large. Please upload an image under 10 MB.")
+    return redirect(url_for("index"))
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     result = None
     confidence = None
+    details = None
+    new_record_id = None
 
     if request.method == "POST":
         # Validate that the request contains an image field
@@ -59,26 +106,42 @@ def index():
             flash("Unsupported file type. Please upload a PNG, JPG, or WEBP image.")
             return redirect(url_for("index"))
 
-        # Sanitize filename to prevent path-traversal attacks
-        filename = secure_filename(file.filename)
+        # Sanitize filename and avoid overwriting previous uploads.
+        try:
+            filename = unique_upload_filename(file.filename)
+        except ValueError as e:
+            flash(str(e))
+            return redirect(url_for("index"))
+
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
 
         try:
+            validate_saved_image(filepath)
             # predict_image now returns (label, confidence_pct, details)
             result, confidence, details = predict_image(filepath)
         except Exception as e:
+            try:
+                os.remove(filepath)
+            except OSError:
+                pass
             flash(f"Prediction error: {e}")
             return redirect(url_for("index"))
 
         # Persist detection result including confidence score and details summary
-        details_json = json.dumps(details)
+        details_json = json.dumps(details, sort_keys=True)
         new_record_id = save_detection(filename=filename, result=result, confidence=confidence, details=details_json)
 
     record_count = len(get_all_detections())
     
-    # We provide 'details' if available from a POST, otherwise None
-    return render_template("index.html", result=result, confidence=confidence, details=locals().get('details'), new_record_id=locals().get('new_record_id'), record_count=record_count)
+    return render_template(
+        "index.html",
+        result=result,
+        confidence=confidence,
+        details=details,
+        new_record_id=new_record_id,
+        record_count=record_count,
+    )
 
 
 @app.route("/dashboard")
@@ -94,21 +157,37 @@ def analysis(record_id: int):
     if record is None:
         flash("Detection record not found.")
         return redirect(url_for("dashboard"))
-    return render_template("analysis.html", record=record)
+
+    details = {}
+    if len(record) > 5 and record[5]:
+        try:
+            details = json.loads(record[5])
+        except json.JSONDecodeError:
+            details = {}
+
+    confidence_value = float(record[3] or 0)
+    is_fake = "fake" in str(record[2]).lower()
+    fake_score = confidence_value if is_fake else max(0.0, 100.0 - confidence_value)
+    real_score = confidence_value if not is_fake else max(0.0, 100.0 - confidence_value)
+
+    return render_template(
+        "analysis.html",
+        record=record,
+        details=details,
+        is_fake=is_fake,
+        fake_score=round(fake_score, 1),
+        real_score=round(real_score, 1),
+    )
 
 
 @app.route("/delete/<int:record_id>", methods=["POST"])
 def delete_record(record_id: int):
     """Delete a detection record from the database."""
-    import sqlite3 as _sqlite3
-    from database import DB_PATH
-    conn = _sqlite3.connect(DB_PATH)
-    try:
-        conn.execute("DELETE FROM detections WHERE id = ?", (record_id,))
-        conn.commit()
-    finally:
-        conn.close()
-    flash(f"Record #{record_id} deleted successfully.")
+    deleted = delete_detection(record_id)
+    if deleted:
+        flash(f"Record #{record_id} deleted successfully.")
+    else:
+        flash(f"Record #{record_id} was not found.")
     return redirect(url_for("dashboard"))
 
 
@@ -167,14 +246,7 @@ def settings():
 @app.route("/clear-history", methods=["POST"])
 def clear_history():
     """Delete all detection records from DB."""
-    import sqlite3 as _sqlite3
-    from database import DB_PATH
-    conn = _sqlite3.connect(DB_PATH)
-    try:
-        conn.execute("DELETE FROM detections")
-        conn.commit()
-    finally:
-        conn.close()
+    clear_detections()
     return "", 204
 
 
@@ -183,6 +255,8 @@ def clear_uploads():
     """Delete all files in the uploads folder."""
     import glob
     for f in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
+        if os.path.basename(f) == ".gitkeep" or not os.path.isfile(f):
+            continue
         try:
             os.remove(f)
         except OSError:
@@ -199,4 +273,4 @@ def test_ui():
     return render_template("index.html", result="Fake Image", confidence=82.5, details=details, record_count=42, active_tab="scan")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")

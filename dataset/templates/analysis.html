@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analysis Report | DeepGuard AI</title>
-  <meta name="description" content="Detailed heatmap analysis and AI insights for your deepfake detection result." />
+  <meta name="description" content="Detailed model-vote analysis for your deepfake detection result." />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
@@ -87,7 +87,7 @@
       </div>
       <div style="display:flex;gap:0.6rem;">
         <button class="btn-ghost" onclick="window.print()">&#128438; Export PDF</button>
-        <button class="btn-ghost" onclick="copyLink()">&#128279; Share</button>
+        <button class="btn-ghost" onclick="copyLink(this)">&#128279; Share</button>
       </div>
     </header>
 
@@ -154,7 +154,7 @@
           <!-- Controls bar -->
           <div class="visualizer-controls">
             <label class="toggle-wrap">
-              <span>Heatmap Overlay</span>
+            <span>Visual Overlay</span>
               <label class="toggle-switch">
                 <input type="checkbox" id="heatmap-toggle"
                   {% if record and 'fake' in (record[2]|default('')|lower) %}checked{% endif %}
@@ -171,14 +171,14 @@
         <!-- ── RIGHT: Insights panel ── -->
         <div class="insights-panel">
 
-          <!-- SVG Authenticity Gauge -->
+          <!-- SVG Detection Gauge -->
           <div class="glass-card gauge-card">
-            <div class="gauge-label">Authenticity Score</div>
+            <div class="gauge-label">Detection Score</div>
             <div class="gauge-wrap">
               <svg width="140" height="140" viewBox="0 0 140 140">
                 <circle class="gauge-track" cx="70" cy="70" r="54"/>
                 <circle
-                  class="{% if record and 'fake' in (record[2]|default('')|lower) %}gauge-fill-fake{% else %}gauge-fill-real{% endif %}"
+                  class="{% if is_fake %}gauge-fill-fake{% else %}gauge-fill-real{% endif %}"
                   cx="70" cy="70" r="54"
                   stroke-dasharray="339.3"
                   stroke-dashoffset="{{ 339.3 - (339.3 * ((record[3] if record and record[3] is not none else 87) / 100)) }}"
@@ -186,13 +186,11 @@
                 />
               </svg>
               <div class="gauge-center">
-                <div class="gauge-pct {% if record and 'fake' in (record[2]|default('')|lower) %}fake-color{% else %}real-color{% endif %}" id="gauge-pct">
+                <div class="gauge-pct {% if is_fake %}fake-color{% else %}real-color{% endif %}" id="gauge-pct">
                   {{ record[3] if record and record[3] is not none else 87 }}%
                 </div>
                 <div class="gauge-result-label">
-                  {% if record %}
-                    {% if 'fake' in (record[2]|default('')|lower) %}Fake Score{% else %}Authentic{% endif %}
-                  {% else %}Fake Score{% endif %}
+                  {% if is_fake %}Fake confidence{% else %}Real confidence{% endif %}
                 </div>
               </div>
             </div>
@@ -200,67 +198,40 @@
               <div style="text-align:center;">
                 <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Fake</div>
                 <div style="font-size:0.9rem;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace;">
-                  {{ record[3] if record and record[3] is not none else 87 }}%
+                  {{ fake_score }}%
                 </div>
               </div>
               <div style="width:1px;background:var(--border-color);"></div>
               <div style="text-align:center;">
                 <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Real</div>
                 <div style="font-size:0.9rem;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">
-                  {{ 100 - (record[3] if record and record[3] is not none else 87) }}%
+                  {{ real_score }}%
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- AI Insights log -->
+          <!-- Model vote log -->
           <div class="glass-card insights-card">
             <div class="insights-title">
-              <span style="color:var(--red);">&#9655;</span>
-              AI Findings
+              <span style="color:var(--cyan);">&#9655;</span>
+              Model Votes
             </div>
 
-            {% if record and 'fake' in (record[2]|default('')|lower) %}
-            <div class="insight-item" style="animation-delay:0.1s;">
-              <div class="insight-dot"></div>
-              <span>Texture mismatch detected in eye-socket region</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.2s;">
-              <div class="insight-dot"></div>
-              <span>Facial boundary artifacts around jawline</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.3s;">
-              <div class="insight-dot warn"></div>
-              <span>Lip geometry inconsistency with reference frame</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.4s;">
-              <div class="insight-dot warn"></div>
-              <span>Skin tone gradient anomaly near forehead</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.5s;">
-              <div class="insight-dot"></div>
-              <span>GAN fingerprint pattern identified in high-freq noise</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.6s;">
-              <div class="insight-dot warn"></div>
-              <span>Blending mask edge visible at 96% zoom</span>
-            </div>
+            {% if details %}
+              {% for model_name, model_data in details.items() %}
+              <div class="insight-item" style="animation-delay:{{ loop.index0 / 10 }}s;">
+                <div class="insight-dot" style="background:{% if 'real' in model_data['label'].lower() %}var(--green){% else %}var(--red){% endif %};"></div>
+                <span>
+                  <strong style="color:var(--text-primary);">{{ model_name }}</strong>
+                  voted {{ model_data['label'] }} at {{ model_data['confidence'] }}% confidence
+                </span>
+              </div>
+              {% endfor %}
             {% else %}
             <div class="insight-item" style="animation-delay:0.1s;">
-              <div class="insight-dot" style="background:var(--green);"></div>
-              <span>Facial geometry is consistent and unmodified</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.2s;">
-              <div class="insight-dot" style="background:var(--green);"></div>
-              <span>No GAN fingerprints detected in frequency domain</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.3s;">
-              <div class="insight-dot" style="background:var(--green);"></div>
-              <span>Skin texture passes natural variance threshold</span>
-            </div>
-            <div class="insight-item" style="animation-delay:0.4s;">
-              <div class="insight-dot" style="background:var(--green);"></div>
-              <span>Eye reflection vectors appear authentic</span>
+              <div class="insight-dot warn"></div>
+              <span>No per-model details were stored for this scan.</span>
             </div>
             {% endif %}
           </div>
@@ -274,7 +245,7 @@
             <div style="display:flex;flex-direction:column;gap:0.6rem;">
               <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
                 <span style="color:var(--text-muted);">Model</span>
-                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">MobileNetV2</span>
+                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Ensemble</span>
               </div>
               <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
                 <span style="color:var(--text-muted);">Input size</span>
@@ -339,9 +310,8 @@
   })();
 
   /* ── Copy link ── */
-  function copyLink() {
+  function copyLink(btn) {
     navigator.clipboard.writeText(window.location.href).then(function () {
-      var btn = event.target;
       var orig = btn.textContent;
       btn.textContent = 'Copied!';
       setTimeout(function () { btn.textContent = orig; }, 1500);
