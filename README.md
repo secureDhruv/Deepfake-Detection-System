@@ -130,6 +130,28 @@ Deepfake Detector/
 
 ---
 
+## 📦 Dataset
+
+The training dataset used for this project is available on Google Drive:
+
+> 🔗 **[Download Dataset from Google Drive](https://drive.google.com/drive/folders/1pH8Ha7DNtds-OPHFvy4dWtjduON-9PC2?usp=sharing)**
+
+The dataset contains real and AI-generated face images organized into the following structure for training:
+```
+dataset/
+├── train/
+│   ├── real/     # Authentic face images
+│   └── fake/     # AI-generated / deepfake images
+└── validation/
+    ├── real/
+    └── fake/
+```
+
+> [!NOTE]
+> Download and extract the dataset into the `dataset/` directory before running `train_ensemble.py`.
+
+---
+
 ## 🚀 Installation & Deployment
 
 ### 1. Environment Setup
@@ -320,6 +342,7 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 - [TensorFlow / Keras](https://www.tensorflow.org/) — ML framework by Google
 - [Flask](https://flask.palletsprojects.com/) — Lightweight Python web framework
 - [FaceForensics++](https://github.com/ondyari/FaceForensics) — Deepfake dataset inspiration
+- [Training Dataset](https://drive.google.com/drive/folders/1pH8Ha7DNtds-OPHFvy4dWtjduON-9PC2?usp=sharing) — Real & fake face image dataset used for ensemble training
 
 ---
 
