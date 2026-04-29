@@ -1,7 +1,6 @@
 import os
-from tensorflow.keras.applications import MobileNetV2, ResNet50V2, Xception
+from tensorflow.keras.applications import MobileNetV2, Xception
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_prep
-from tensorflow.keras.applications.resnet_v2 import preprocess_input as resnet_prep
 from tensorflow.keras.applications.xception import preprocess_input as xception_prep
 from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -23,12 +22,6 @@ MODELS_TO_TRAIN = [
         "class": MobileNetV2,
         "preprocess": mobilenet_prep,
         "save_path": os.path.join(MODEL_DIR, "deepfake_model.h5")
-    },
-    {
-        "name": "ResNet50V2",
-        "class": ResNet50V2,
-        "preprocess": resnet_prep,
-        "save_path": os.path.join(MODEL_DIR, "resnet_model.h5")
     },
     {
         "name": "Xception",

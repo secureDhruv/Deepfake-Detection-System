@@ -17,11 +17,6 @@ ENSEMBLE_CONFIG = {
         "preprocess": "mobilenet",
         "target_size": (224, 224),
     },
-    "ResNet50V2": {
-        "path": os.path.join(MODEL_DIR, "resnet_model.h5"),
-        "preprocess": "resnet",
-        "target_size": (224, 224),
-    },
     "Xception": {
         "path": os.path.join(MODEL_DIR, "xception_model.h5"),
         "preprocess": "xception",
@@ -51,12 +46,10 @@ def _get_preprocessors() -> dict[str, object]:
     global _preprocessors
     if _preprocessors is None:
         from tensorflow.keras.applications.mobilenet_v2 import preprocess_input as mobilenet_prep
-        from tensorflow.keras.applications.resnet_v2 import preprocess_input as resnet_prep
         from tensorflow.keras.applications.xception import preprocess_input as xception_prep
 
         _preprocessors = {
             "mobilenet": mobilenet_prep,
-            "resnet": resnet_prep,
             "xception": xception_prep,
         }
     return _preprocessors
