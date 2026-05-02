@@ -5,6 +5,19 @@
 
 'use strict';
 
+function getCsrfToken() {
+  var meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute('content') : '';
+}
+
+window.dgFetch = function (url, options) {
+  options = options || {};
+  options.headers = Object.assign({}, options.headers || {}, {
+    'X-CSRFToken': getCsrfToken()
+  });
+  return fetch(url, options);
+};
+
 /* ════════════════════════════════════════════════════════
    1. SIDEBAR — Desktop collapse + Mobile drawer
    ════════════════════════════════════════════════════════ */
@@ -304,6 +317,12 @@
     searchInput.addEventListener('input', function () {
       filterRows(this.value);
     });
+
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var query = this.value.trim();
+      window.location.href = query ? '/dashboard?q=' + encodeURIComponent(query) : '/dashboard';
+    });
   }
 
   function filterRows(query) {
@@ -346,7 +365,7 @@
       if (pendingId === null) return;
 
       if (pendingId === 'all') {
-        fetch('/clear-history', { method: 'POST' })
+        window.dgFetch('/clear-history', { method: 'POST' })
           .then(function () { window.location.reload(); })
           .catch(function () { window.location.reload(); });
         window.closeDeleteModal();
@@ -354,7 +373,7 @@
       }
 
       var row = document.getElementById('row-' + pendingId);
-      fetch('/delete/' + pendingId, { method: 'POST' })
+      window.dgFetch('/delete/' + pendingId, { method: 'POST' })
         .then(function (r) {
           if (!r.ok) throw new Error('Delete failed');
           if (row) {

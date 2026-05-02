@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detection History | DeepGuard AI</title>
   <meta name="description" content="Review all past deepfake detection scans, confidence scores, and analysis results." />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
   <!-- FIX 1: Google Fonts (was missing entirely) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -124,7 +125,7 @@
       <div style="display:flex;align-items:center;gap:0.75rem;">
         <div class="search-bar">
           <span class="search-icon">⌕</span>
-          <input type="text" placeholder="Search filename..." id="search-input" />
+          <input type="text" placeholder="Search filename..." id="search-input" value="{{ search_query }}" />
         </div>
         <a href="/" class="btn-outline-cyan">
           <span>+</span> New Scan
@@ -138,23 +139,21 @@
       <div class="page-header">
         <div>
           <div class="page-header-title">Recent Detections</div>
-          <div class="page-header-sub">Showing all stored scan records</div>
+          <div class="page-header-sub">
+            {% if search_query %}
+              Showing matches for "{{ search_query }}"
+            {% else %}
+              Showing {{ data|length }} of {{ total_records }} stored scan records
+            {% endif %}
+          </div>
         </div>
         <div class="stat-chips">
           <div class="stat-chip">
-            Total <strong>{{ data|length }}</strong>
+            Total <strong>{{ total_records }}</strong>
           </div>
           <div class="stat-chip">
-            Fakes <strong id="chip-fake">
+            Fakes <strong id="chip-fake">{{ fake_count }}</strong>
               {# FIX 2: Jinja does the count — JS duplicate block removed below #}
-              {% set fake_count = namespace(value=0) %}
-              {% for row in data %}
-                {% if 'fake' in (row[2] | default('') | lower) %}
-                  {% set fake_count.value = fake_count.value + 1 %}
-                {% endif %}
-              {% endfor %}
-              {{ fake_count.value }}
-            </strong>
           </div>
         </div>
       </div>
@@ -236,12 +235,39 @@
           </table>
         </div>
 
+        {% if total_pages > 1 %}
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;margin-top:1rem;">
+          <a
+            href="{{ url_for('dashboard', page=page - 1, q=search_query) }}"
+            class="btn-ghost"
+            style="{% if page <= 1 %}pointer-events:none;opacity:0.45;{% endif %}"
+          >
+            Previous
+          </a>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--text-muted);">
+            Page {{ page }} of {{ total_pages }}
+          </span>
+          <a
+            href="{{ url_for('dashboard', page=page + 1, q=search_query) }}"
+            class="btn-outline-cyan"
+            style="{% if page >= total_pages %}pointer-events:none;opacity:0.45;{% endif %}"
+          >
+            Next
+          </a>
+        </div>
+        {% endif %}
+
         {% else %}
         <!-- Empty state -->
         <div class="empty-state">
           <div class="empty-icon">&#128289;</div>
+          {% if search_query %}
+          <p style="font-size:1rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;">No matching detections</p>
+          <p><a href="/dashboard">Clear search</a> or try another filename.</p>
+          {% else %}
           <p style="font-size:1rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;">No detections yet</p>
           <p>Upload an image on the <a href="/">home page</a> to get started.</p>
+          {% endif %}
         </div>
         {% endif %}
       </div><!-- /glass-card -->
@@ -318,6 +344,12 @@
       });
     });
 
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      var query = this.value.trim();
+      window.location.href = query ? '/dashboard?q=' + encodeURIComponent(query) : '/dashboard';
+    });
+
     var urlParams = new URLSearchParams(window.location.search);
     var q = urlParams.get('q');
     if (q) {
@@ -351,7 +383,7 @@
 
     // FIX: 'all' must call /clear-history, not /delete/all (that route doesn't exist)
     if (pendingDeleteId === 'all') {
-      fetch('/clear-history', { method: 'POST' })
+      window.dgFetch('/clear-history', { method: 'POST' })
         .then(function (r) {
           if (r.ok) { window.location.reload(); }
           else { closeDeleteModal(); }
@@ -361,7 +393,7 @@
     }
 
     var row = document.getElementById('row-' + pendingDeleteId);
-    fetch('/delete/' + pendingDeleteId, { method: 'POST' })
+    window.dgFetch('/delete/' + pendingDeleteId, { method: 'POST' })
       .then(function (response) {
         if (!response.ok) throw new Error('Delete failed');
         if (row) {

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeepGuard AI — Deepfake Detection</title>
   <meta name="description" content="Upload an image to instantly detect deepfakes, or configure your DeepGuard AI settings." />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -816,6 +817,7 @@
           {% endwith %}
 
           <form method="POST" enctype="multipart/form-data" action="{{ url_for('index') }}" id="detect-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
             <!-- Upload zone -->
             <div class="upload-area" id="upload-area">
@@ -952,7 +954,7 @@
                 <div class="settings-card-sub">Configure the AI engine used for analysis</div>
                 <div class="setting-row">
                   <div class="setting-info"><div class="setting-label">Active Model</div><div class="setting-desc">Neural network architecture currently powering detections</div></div>
-                  <span class="tag tag-cyan">Ensemble / MobileNetV2 / ResNet50V2 / Xception</span>
+                  <span class="tag tag-cyan">Ensemble / MobileNetV2 / Xception</span>
                 </div>
                 <div class="setting-row">
                   <div class="setting-info"><div class="setting-label">Confidence Threshold</div><div class="setting-desc">Minimum score to classify as Deepfake. Higher = more strict.</div></div>
@@ -1296,7 +1298,7 @@ document.getElementById('danger-confirm-btn').addEventListener('click', function
   var ep = dangerEndpoint;
   dangerEndpoint = null;
   document.getElementById('danger-modal').classList.remove('show');
-  fetch('/' + ep, { method: 'POST' })
+  window.dgFetch('/' + ep, { method: 'POST' })
     .then(function () { showToast('✓ Done'); setTimeout(function () { window.location.reload(); }, 800); })
     .catch(function () { showToast('✗ Action failed'); });
 });

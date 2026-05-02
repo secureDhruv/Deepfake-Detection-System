@@ -31,14 +31,14 @@
 
 ## 🧠 Overview
 
-**Deepfake Detector** identifies AI-generated face images by averaging predictions from three TensorFlow/Keras classifiers: **MobileNetV2**, **ResNet50V2**, and **Xception**. The Flask app handles image upload, preprocessing, model inference, result storage, and a browser-based history/analytics UI.
+**Deepfake Detector** identifies AI-generated face images by averaging predictions from two TensorFlow/Keras classifiers: **MobileNetV2** and **Xception**. The Flask app handles image upload, preprocessing, model inference, result storage, and a browser-based history/analytics UI.
 
 ---
 
 ## ✨ Features
 
 ### 🛡️ Multi-Model Ensemble
-- **Triple-Model Validation:** Uses MobileNetV2, ResNet50V2, and Xception backbones.
+- **Dual-Model Validation:** Uses MobileNetV2 and Xception backbones.
 - **Soft-Voting Consensus:** Returns an aggregated confidence score from the available model probabilities.
 - **Explainable Results:** Breakdown of how each individual model voted on the forensic analysis.
 
@@ -73,11 +73,11 @@
                                                   │               │
             ┌─────────────────────────────────────▼───────┐       │
             │           MULTI-MODEL ENSEMBLE              │       │
-            │  ┌────────────┐┌────────────┐┌────────────┐ │       ▼
-            │  │ MobileNetV2││ ResNet50V2 ││  Xception  │ │   ┌─────────┐
-            │  └─────┬──────┘└─────┬──────┘└─────┬──────┘ │   │ SQLite  │
-            │        │             │             │        │   │ (DB)    │
-            │        └─────────────┼─────────────┘        │   └─────────┘
+            │        ┌────────────┐      ┌────────────┐   │       ▼
+            │        │ MobileNetV2│      │  Xception  │   │   ┌─────────┐
+            │        └─────┬──────┘      └─────┬──────┘   │   │ SQLite  │
+            │              │                   │          │   │ (DB)    │
+            │              └─────────┬─────────┘          │   └─────────┘
             │                      ▼                      │
             │            ENSMEMBLE CONSENSUS              │
             └─────────────────────────────────────────────┘
@@ -90,7 +90,6 @@
 ### 1. Training Phase (`train_ensemble.py`)
 The system employs **Transfer Learning** from ImageNet-pretrained weights. Each model is trained on the prepared real/fake image folders under `dataset/train` and validated on the disjoint split under `dataset/validation`.
 - **MobileNetV2:** Lightweight, focuses on high-level spatial features.
-- **ResNet50V2:** Uses skip-connections to retain fine-grained detail.
 - **Xception:** Utilizes depthwise separable convolutions for superior accuracy.
 
 ### 2. Inference Phase (`predictor.py`)
@@ -107,7 +106,7 @@ The system employs **Transfer Learning** from ImageNet-pretrained weights. Each 
 Deepfake Detector/
 ├── 📄 app.py                  # Main Flask application & routes
 ├── 📄 database.py             # SQLite database operations
-├── 📄 train_ensemble.py       # Orchestrator for training the 3-model suite
+├── 📄 train_ensemble.py       # Orchestrator for training the 2-model suite
 ├── 📄 train_model.py          # Legacy single-model trainer
 ├── 📄 requirements.txt        # Pinned project dependencies
 ├── 📄 history.db              # Persistence layer
@@ -115,7 +114,6 @@ Deepfake Detector/
 └── 📂 dataset/
     ├── 📂 model/              # Trained weights (*.h5)
     │   ├── 🧠 deepfake_model.h5 (MobileNetV2)
-    │   ├── 🧠 resnet_model.h5
     │   └── 🧠 xception_model.h5
     │
     ├── 📂 templates/          # Jinja2 modern UI components
@@ -173,7 +171,7 @@ If you are starting fresh, you must train the ensemble to generate the model fil
 ```bash
 python train_ensemble.py
 ```
-*Note: This will train MobileNetV2, ResNet50V2, and Xception in sequence.*
+*Note: This will train MobileNetV2 and Xception in sequence.*
 
 ### 3. Launch the Platform
 ```bash
@@ -226,7 +224,12 @@ python app.py
 
 | Variable | Default | Description |
 |---|---|---|
-| `SECRET_KEY` | `change-me-before-deploying` | Flask session secret. Set via env var in production. |
+| `SECRET_KEY` | `dev-only-change-me` locally | Flask session and CSRF secret. Required when `APP_ENV=production` or `FLASK_ENV=production`. |
+| `APP_ENV` / `FLASK_ENV` | unset | Set either to `production` to enforce production-safe configuration. |
+| `FLASK_HOST` | `127.0.0.1` | Host used by `python app.py`. |
+| `PORT` | `5000` | Port used by `python app.py`. |
+| `FLASK_DEBUG` | `0` | Set to `1` only for local debugging. |
+| `ENABLE_TEST_UI` | `0` | Set to `1` to expose the `/test-ui` demo route locally. |
 | `MAX_CONTENT_LENGTH` | `10 MB` | Maximum upload file size |
 | `ALLOWED_EXTENSIONS` | `png, jpg, jpeg, webp` | Accepted image formats |
 | `MODEL_DIR` | `dataset/model/` | Folder containing the ensemble `.h5` model files |

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings | DeepGuard AI</title>
   <meta name="description" content="Configure DeepGuard AI detection settings, model preferences, and display options." />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -1453,7 +1454,7 @@ document.getElementById('danger-confirm-btn').addEventListener('click', function
   var ep = dangerEndpoint;
   closeDangerModal();
 
-  fetch('/' + ep, { method: 'POST' })
+  window.dgFetch('/' + ep, { method: 'POST' })
     .then(function (r) {
       if (r.ok || r.status === 204) {
         showToast('✓ Done');
