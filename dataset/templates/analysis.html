@@ -5,48 +5,919 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Analysis Report | DeepGuard AI</title>
   <meta name="description" content="Detailed model-vote analysis for your deepfake detection result." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <style>
+    /* ════════════════════════════════════════════
+       PAGE ANIMATION
+    ════════════════════════════════════════════ */
+    .page-area {
+      animation: fadeUp 0.35s ease both;
+    }
+
+    /* ════════════════════════════════════════════
+       REPORT HERO — premium forensic header
+    ════════════════════════════════════════════ */
+    .report-hero {
+      position: relative;
+      overflow: hidden;
+      padding: 1.6rem 1.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      border-left: 4px solid var(--cyan);
+    }
+
+    /* Radial corner glow per verdict */
+    .report-hero::before {
+      content: "";
+      position: absolute;
+      top: 0; right: 0;
+      width: 280px; height: 100%;
+      pointer-events: none;
+    }
+
+    .report-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.025) 0%,
+        transparent 60%
+      );
+      pointer-events: none;
+    }
+
+    .report-hero.is-fake {
+      border-left-color: var(--red);
+    }
+
+    .report-hero.is-real {
+      border-left-color: var(--green);
+    }
+
+    .report-hero.is-fake::before {
+      background: radial-gradient(
+        ellipse at right center,
+        rgba(255, 56, 96, 0.18) 0%,
+        transparent 70%
+      );
+    }
+
+    .report-hero.is-real::before {
+      background: radial-gradient(
+        ellipse at right center,
+        rgba(0, 217, 126, 0.16) 0%,
+        transparent 70%
+      );
+    }
+
+    /* Left text block */
+    .report-hero-text {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .report-eyebrow {
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 0.45rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .report-eyebrow-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 5px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .report-hero.is-fake .report-eyebrow-dot { background: var(--red); box-shadow: 0 0 5px var(--red); }
+    .report-hero.is-real .report-eyebrow-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
+
+    .report-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.4px;
+    }
+
+    .report-hero.is-fake .report-title { color: var(--red); text-shadow: 0 0 20px rgba(255,56,96,0.25); }
+    .report-hero.is-real .report-title { color: var(--green); text-shadow: 0 0 20px rgba(0,217,126,0.2); }
+
+    .report-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .report-meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.22rem 0.55rem;
+    }
+
+    .report-meta-chip span { color: var(--text-secondary); }
+
+    /* Right score circle */
+    .report-score-circle {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 242, 255, 0.2);
+      background: rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--cyan-glow-sm), inset 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .report-hero.is-fake .report-score-circle {
+      border-color: rgba(255, 56, 96, 0.3);
+      box-shadow: 0 0 16px rgba(255,56,96,0.2), inset 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .report-hero.is-real .report-score-circle {
+      border-color: rgba(0, 217, 126, 0.3);
+      box-shadow: 0 0 16px rgba(0,217,126,0.18), inset 0 0 20px rgba(0,0,0,0.3);
+    }
+
+    .report-score-val {
+      font-size: 1.45rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+      color: var(--cyan);
+    }
+
+    .report-hero.is-fake .report-score-val { color: var(--red); }
+    .report-hero.is-real .report-score-val { color: var(--green); }
+
+    .report-score-label {
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      margin-top: 3px;
+    }
+
+    /* ════════════════════════════════════════════
+       BACK BUTTON
+    ════════════════════════════════════════════ */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .back-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-card-hover);
+      border-color: var(--cyan);
+    }
+
+    /* ════════════════════════════════════════════
+       ANALYSIS GRID
+    ════════════════════════════════════════════ */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .insights-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    /* ════════════════════════════════════════════
+       VISUALIZER
+    ════════════════════════════════════════════ */
+    .visualizer-header {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .visualizer-header-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .visualizer-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,242,255,0.2);
+      border-radius: 999px;
+      padding: 0.18rem 0.6rem;
+      letter-spacing: 0.4px;
+    }
+
+    .visualizer-status-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 5px var(--cyan);
+      animation: pulse-dot 1.8s infinite;
+    }
+
+    .visualizer-wrap {
+      position: relative;
+      height: 380px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .visualizer-img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* ── Heatmap overlay ── */
+    .heatmap-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .heatmap-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .heatmap-gradient {
+      position: absolute;
+      border-radius: 50%;
+      mix-blend-mode: screen;
+    }
+
+    .hotspot-eyes {
+      top: 23%; left: 18%; width: 64%; height: 24%;
+      background: radial-gradient(ellipse, rgba(255,56,96,0.42) 0%, transparent 68%);
+      animation: pulseHeat 2.6s ease-in-out infinite;
+    }
+
+    .hotspot-mouth {
+      top: 57%; left: 29%; width: 42%; height: 20%;
+      background: radial-gradient(ellipse, rgba(255,140,0,0.33) 0%, transparent 68%);
+      animation: pulseHeat 3.1s ease-in-out infinite 0.7s;
+    }
+
+    .hotspot-contour {
+      top: 4%; left: 4%; width: 92%; height: 92%;
+      background: radial-gradient(ellipse, transparent 38%, rgba(255,56,96,0.1) 100%);
+      animation: pulseHeat 4.2s ease-in-out infinite 0.3s;
+    }
+
+    @keyframes pulseHeat {
+      0%, 100% { opacity: 0.65; }
+      50%       { opacity: 1; }
+    }
+
+    /* Detection dots */
+    .detection-dot {
+      position: absolute;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.65);
+      animation: pulseRing 2s ease-out infinite;
+    }
+
+    .detection-dot::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .dot-eye-l  { top: 29%; left: 29%; }
+    .dot-eye-r  { top: 29%; right: 29%; }
+    .dot-mouth  { top: 62%; left: 50%; transform: translateX(-50%); animation-delay: 0.5s; }
+
+    @keyframes pulseRing {
+      0%   { box-shadow: 0 0 0 0   rgba(255,56,96,0.65); }
+      70%  { box-shadow: 0 0 0 10px rgba(255,56,96,0); }
+      100% { box-shadow: 0 0 0 0   rgba(255,56,96,0); }
+    }
+
+    /* Scan grid overlay on image */
+    .visualizer-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,242,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,242,255,0.025) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .visualizer-grid.active { opacity: 1; }
+
+    /* Corner brackets */
+    .vis-corner {
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: var(--cyan);
+      border-style: solid;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .report-hero.is-fake ~ .analysis-grid .vis-corner,
+    .is-fake-corner { border-color: var(--red); }
+
+    .vis-corner.tl { top: 8px; left: 8px;  border-width: 2px 0 0 2px; }
+    .vis-corner.tr { top: 8px; right: 8px;  border-width: 2px 2px 0 0; }
+    .vis-corner.bl { bottom: 8px; left: 8px;  border-width: 0 0 2px 2px; }
+    .vis-corner.br { bottom: 8px; right: 8px;  border-width: 0 2px 2px 0; }
+
+    /* Controls bar */
+    .visualizer-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.7rem 1rem;
+      border-top: 1px solid var(--border-color);
+      background: rgba(11,14,20,0.6);
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      left: 2px; top: 2px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--cyan);
+      border-color: var(--cyan);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::before {
+      transform: translateX(16px);
+      background: #000;
+    }
+
+    .overlay-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      transition: all 0.25s;
+    }
+
+    .overlay-badge.on {
+      background: var(--red-dim);
+      color: var(--red);
+      border-color: rgba(255,56,96,0.25);
+    }
+
+    .overlay-badge.off {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      border-color: var(--border-color);
+    }
+
+    /* ════════════════════════════════════════════
+       GAUGE CARD
+    ════════════════════════════════════════════ */
+    .gauge-card {
+      padding: 1.35rem;
+      text-align: center;
+    }
+
+    .gauge-card-title {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .gauge-card-title-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 5px var(--cyan);
+    }
+
+    .gauge-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-center {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .gauge-pct {
+      font-size: 1.7rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1;
+    }
+
+    .gauge-result-label {
+      font-size: 0.58rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .gauge-track {
+      stroke: rgba(255,255,255,0.065);
+      stroke-width: 11;
+      fill: none;
+    }
+
+    .gauge-fill-fake {
+      fill: none;
+      stroke: var(--red);
+      stroke-width: 11;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 70px 70px;
+      filter: drop-shadow(0 0 8px rgba(255,56,96,0.55));
+    }
+
+    .gauge-fill-real {
+      fill: none;
+      stroke: var(--green);
+      stroke-width: 11;
+      stroke-linecap: round;
+      transform: rotate(-90deg);
+      transform-origin: 70px 70px;
+      filter: drop-shadow(0 0 8px rgba(0,217,126,0.5));
+    }
+
+    .fake-color { color: var(--red); }
+    .real-color { color: var(--green); }
+
+    /* Score row below gauge */
+    .score-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.75rem;
+      margin-top: 1.1rem;
+      padding-top: 0.9rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .score-item { text-align: center; }
+
+    .score-label {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 3px;
+    }
+
+    .score-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .score-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--border-color);
+    }
+
+    /* ════════════════════════════════════════════
+       MODEL VOTE CARDS — premium grid
+    ════════════════════════════════════════════ */
+    .model-votes-header {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .model-votes-header-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 5px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .model-vote-card {
+      padding: 0.9rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.022);
+      margin-bottom: 0.6rem;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .model-vote-card:last-child { margin-bottom: 0; }
+
+    .model-vote-card.vote-fake {
+      border-left: 3px solid var(--red);
+    }
+
+    .model-vote-card.vote-real {
+      border-left: 3px solid var(--green);
+    }
+
+    .model-vote-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .model-vote-card.vote-fake:hover {
+      border-color: rgba(255,56,96,0.35);
+      background: rgba(255,56,96,0.04);
+    }
+
+    .model-vote-card.vote-real:hover {
+      border-color: rgba(0,217,126,0.35);
+      background: rgba(0,217,126,0.04);
+    }
+
+    .model-vote-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .model-vote-name-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .model-vote-icon {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .model-vote-icon.fake {
+      background: var(--red-dim);
+      color: var(--red);
+    }
+
+    .model-vote-icon.real {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .model-vote-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .model-vote-pill {
+      font-size: 0.64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      padding: 0.16rem 0.5rem;
+      border-radius: 999px;
+    }
+
+    .model-vote-pill.fake {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(255,56,96,0.25);
+    }
+
+    .model-vote-pill.real {
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(0,217,126,0.25);
+    }
+
+    .model-vote-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .model-vote-bar-track {
+      flex: 1;
+      height: 5px;
+      background: rgba(255,255,255,0.065);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .model-vote-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      width: 0;
+      transition: width 0.9s cubic-bezier(0.25,1,0.5,1);
+    }
+
+    .model-vote-bar-fill.fake {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255,56,96,0.4);
+    }
+
+    .model-vote-bar-fill.real {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(0,217,126,0.4);
+    }
+
+    .model-vote-conf {
+      font-size: 0.77rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+
+    /* ════════════════════════════════════════════
+       METADATA CARD
+    ════════════════════════════════════════════ */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border-color);
+      gap: 1rem;
+    }
+
+    .meta-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .meta-row:first-child { padding-top: 0; }
+
+    .meta-key { color: var(--text-muted); flex-shrink: 0; }
+
+    .meta-val {
+      color: var(--text-secondary);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    /* ════════════════════════════════════════════
+       SECTION CARD TITLE
+    ════════════════════════════════════════════ */
+    .section-card {
+      padding: 1.25rem;
+    }
+
+    .section-card-title {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .section-card-title-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 5px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════════
+       ACTIONS ROW
+    ════════════════════════════════════════════ */
+    .actions-row {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .actions-row .btn-ghost,
+    .actions-row .btn-outline-cyan {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* ════════════════════════════════════════════
+       TOAST
+    ════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: #151B27;
+      border: 1px solid rgba(0,242,255,0.28);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1.15rem;
+      font-size: 0.8rem;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--cyan-glow-sm);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.32s cubic-bezier(0.22,1,0.36,1);
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ════════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      .analysis-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .visualizer-wrap { height: 280px; }
+
+      .report-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .report-score-circle { display: none; }
+    }
+  </style>
 </head>
 <body>
 
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
 <div class="app-layout">
 
-  <!-- ── Sidebar ─────────────────────────────────── -->
-  <aside class="sidebar">
+  <!-- ════════════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">DeepGuard AI</div>
-      <div class="logo-sub">Synthetic Media Detection</div>
+      <div style="display:flex;align-items:center;gap:0.55rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          style="flex-shrink:0;filter:drop-shadow(0 0 4px rgba(0,242,255,0.5));">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div>
+          <div class="logo-text">DeepGuard AI</div>
+          <div class="logo-sub">Synthetic Media Detection</div>
+        </div>
+      </div>
       <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar">&#10094;</button>
     </div>
+
     <nav class="sidebar-nav">
       <div class="nav-section-label">Workspace</div>
+
       <a href="/" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
-        New Analysis
+        <span>New Analysis</span>
       </a>
-      <a href="/dashboard" class="nav-link">
+
+      <a href="/dashboard" class="nav-link active">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
         </svg>
-        Detection History
+        <span>Detection History</span>
       </a>
+
       <div class="nav-section-label" style="margin-top:0.5rem;">Tools</div>
+
       <a href="/analytics" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
         <span>Analytics</span>
       </a>
+
       <a href="/settings" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
         </svg>
         <span>Settings</span>
-        
       </a>
     </nav>
+
     <div class="sidebar-footer">
       <div class="sidebar-engine-status">
         <span class="status-dot"></span>
@@ -55,219 +926,369 @@
       {% if engine_models %}
       <div class="sidebar-model-panel">
         <div class="sidebar-panel-label">Ensemble Models</div>
-        {% for mname in engine_models %}
-        <div class="sidebar-model-row">
-          <div class="sidebar-model-header">
-            <span class="sidebar-model-name">{{ mname }}</span>
-            <span class="sidebar-model-conf" style="color:var(--text-muted);">Ready</span>
+        {% if details %}
+          {% set best = namespace(name='', conf=0) %}
+          {% for mname, mdata in details.items() %}
+            {% if mdata['confidence'] > best.conf %}
+              {% set best.conf = mdata['confidence'] %}
+              {% set best.name = mname %}
+            {% endif %}
+          {% endfor %}
+          {% for mname in engine_models %}
+            {% if mname in details %}
+              {% set mdata = details[mname] %}
+              {% set mv_real = 'real' in mdata['label'].lower() %}
+              <div class="sidebar-model-row">
+                <div class="sidebar-model-header">
+                  <span class="sidebar-model-name">
+                    {% if mname == best.name %}
+                      <span class="best-crown" title="Highest confidence">&#9733;</span>
+                    {% endif %}
+                    {{ mname }}
+                  </span>
+                  <span class="sidebar-model-conf"
+                    style="color:{% if mv_real %}var(--green){% else %}var(--red){% endif %};">
+                    {{ mdata['confidence'] }}%
+                  </span>
+                </div>
+                <div class="sidebar-mini-bar">
+                  <div class="sidebar-mini-fill {% if mv_real %}real{% else %}fake{% endif %}"
+                       style="width:{{ mdata['confidence'] }}%;"></div>
+                </div>
+              </div>
+            {% else %}
+              <div class="sidebar-model-row">
+                <div class="sidebar-model-header">
+                  <span class="sidebar-model-name">{{ mname }}</span>
+                  <span class="sidebar-model-conf" style="color:var(--text-muted);">--</span>
+                </div>
+                <div class="sidebar-mini-bar">
+                  <div class="sidebar-mini-fill idle" style="width:30%;"></div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+          <div class="sidebar-best-row">
+            <span class="sidebar-best-label">&#9733; Best</span>
+            <span class="sidebar-best-value">{{ best.name }} &bull; {{ best.conf }}%</span>
           </div>
-          <div class="sidebar-mini-bar">
-            <div class="sidebar-mini-fill idle" style="width:100%;"></div>
+        {% else %}
+          {% for mname in engine_models %}
+          <div class="sidebar-model-row">
+            <div class="sidebar-model-header">
+              <span class="sidebar-model-name">{{ mname }}</span>
+              <span class="sidebar-model-conf" style="color:var(--text-muted);">Ready</span>
+            </div>
+            <div class="sidebar-mini-bar">
+              <div class="sidebar-mini-fill idle" style="width:100%;"></div>
+            </div>
           </div>
-        </div>
-        {% endfor %}
+          {% endfor %}
+        {% endif %}
       </div>
       {% endif %}
     </div>
   </aside>
 
-  <!-- ── Main ───────────────────────────────────── -->
+  <!-- ════════════════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════════════════ -->
   <div class="main-content">
 
     <!-- Topbar -->
     <header class="topbar">
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <a href="/dashboard" style="color:var(--text-muted);font-size:1rem;line-height:1;" title="Back">&#8592;</a>
+        <button class="hamburger-btn" id="hamburger-btn" title="Open menu" aria-label="Open sidebar">&#9776;</button>
+        <a href="/dashboard" class="back-btn">&#8592; Back</a>
         <div>
           <div class="topbar-title">Analysis Report</div>
-          <div class="topbar-subtitle" id="topbar-filename">
+          <div class="topbar-subtitle">
             {{ record[1] if record else 'Unknown File' }}
           </div>
         </div>
       </div>
       <div style="display:flex;gap:0.6rem;">
-        <button class="btn-ghost" onclick="window.print()">&#128438; Export PDF</button>
-        <button class="btn-ghost" onclick="copyLink(this)">&#128279; Share</button>
+        <button class="btn-ghost" onclick="window.print()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+          </svg>
+          Export PDF
+        </button>
+        <button class="btn-ghost" onclick="copyLink()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          Share
+        </button>
       </div>
     </header>
 
     <div class="page-area">
 
-      <!-- Result summary banner -->
-      <div class="glass-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-        <div style="display:flex;align-items:center;gap:1rem;">
-          {% if record %}
-            {% if 'fake' in (record[2] | default('') | lower) %}
-              <span class="badge badge-fake" style="font-size:0.8rem;padding:0.35rem 0.85rem;">&#9888; Deepfake Detected</span>
+      <!-- ════════════════════════════════════════
+           REPORT HERO
+      ════════════════════════════════════════ -->
+      {% set is_fake_result = record and 'fake' in (record[2] | default('') | lower) %}
+
+      <div class="glass-card report-hero {% if is_fake_result %}is-fake{% elif record %}is-real{% endif %}">
+        <div class="report-hero-text">
+          <div class="report-eyebrow">
+            <span class="report-eyebrow-dot"></span>
+            DeepGuard Forensic Report
+          </div>
+          <div class="report-title">
+            {% if is_fake_result %}
+              Deepfake Detected
+            {% elif record %}
+              Authentic Media
             {% else %}
-              <span class="badge badge-real" style="font-size:0.8rem;padding:0.35rem 0.85rem;">&#10003; Authentic Media</span>
+              Analysis Result
             {% endif %}
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);">
-              Scan #{{ record[0] }} &nbsp;&middot;&nbsp; {{ record[4] }}
-            </span>
-          {% else %}
-            <span class="badge badge-fake" style="font-size:0.8rem;padding:0.35rem 0.85rem;">&#9888; Deepfake Detected</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--text-muted);">Demo — Scan #42 &nbsp;&middot;&nbsp; 2026-04-22</span>
-          {% endif %}
+          </div>
+          <div class="report-meta-row">
+            {% if record %}
+              <div class="report-meta-chip">
+                # <span>{{ record[0] }}</span>
+              </div>
+              <div class="report-meta-chip">
+                &#128247; <span class="fmt-fname">{{ record[1] }}</span>
+              </div>
+              <div class="report-meta-chip">
+                &#128336; <span class="fmt-ts" data-ts="{{ record[4] }}">{{ record[4] }}</span>
+              </div>
+            {% else %}
+              <div class="report-meta-chip"># <span>42</span></div>
+              <div class="report-meta-chip">&#128247; <span>demo.jpg</span></div>
+            {% endif %}
+          </div>
         </div>
-        <div style="font-size:0.8rem;color:var(--text-muted);">
-          Confidence:&nbsp;
-          <strong style="color:var(--text-primary);font-family:'JetBrains Mono',monospace;">
-            {% if record and record[3] is not none %}{{ record[3] }}%{% else %}87%{% endif %}
-          </strong>
+
+        <!-- Confidence circle -->
+        <div class="report-score-circle">
+          <div class="report-score-val">
+            {% if record and record[3] is not none %}{{ record[3] | round(1) }}{% else %}87.0{% endif %}%
+          </div>
+          <div class="report-score-label">confidence</div>
         </div>
       </div>
 
-      <!-- Split-screen analysis grid -->
+      <!-- ════════════════════════════════════════
+           ANALYSIS GRID
+      ════════════════════════════════════════ -->
       <div class="analysis-grid">
 
-        <!-- ── LEFT: Visualizer ── -->
+        <!-- ── LEFT: Image Visualizer ── -->
         <div class="glass-card" style="overflow:hidden;">
-          <div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:0.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;">Media Visualizer</span>
-            <span style="font-size:0.72rem;color:var(--cyan);font-family:'JetBrains Mono',monospace;">AI SCAN COMPLETE</span>
-          </div>
 
-          <!-- Image + heatmap overlay -->
-          <div class="visualizer-wrap" style="aspect-ratio:unset;height:420px;">
-            <img
-              class="visualizer-img"
-              id="analysis-img"
-              src="{% if record %}{{ url_for('static', filename='uploads/' ~ record[1]) }}{% else %}https://placehold.co/600x420/090C12/1a2235?text=No+Image{% endif %}"
-              alt="Analyzed media"
-              onerror="this.src='https://placehold.co/600x420/090C12/1a2235?text=Image+Not+Found'"
-            />
-
-            <!-- Heatmap overlay (visible by default for deepfakes) -->
-            <div class="heatmap-overlay {% if record and 'real' in (record[2]|default('')|lower) %}hidden{% endif %}" id="heatmap-overlay">
-              <!-- Gradient hotspots -->
-              <div class="heatmap-gradient hotspot-eyes"></div>
-              <div class="heatmap-gradient hotspot-mouth"></div>
-              <div class="heatmap-gradient hotspot-contour"></div>
-              <!-- Pulsing detection dots -->
-              <div class="detection-dot dot-eye-l"></div>
-              <div class="detection-dot dot-eye-r"></div>
-              <div class="detection-dot dot-mouth" style="animation-delay:0.6s;"></div>
+          <div class="visualizer-header">
+            <div class="visualizer-header-label">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--cyan);">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Media Visualizer
+            </div>
+            <div class="visualizer-status">
+              <span class="visualizer-status-dot"></span>
+              AI SCAN COMPLETE
             </div>
           </div>
 
-          <!-- Controls bar -->
+          <div class="visualizer-wrap" id="visualizer-wrap">
+            <img
+              class="visualizer-img"
+              id="analysis-img"
+              src="{% if record %}{{ url_for('static', filename='uploads/' ~ record[1]) }}{% else %}https://placehold.co/600x380/090C12/1a2235?text=No+Image{% endif %}"
+              alt="Analyzed media"
+              onerror="this.src='https://placehold.co/600x380/090C12/1a2235?text=Image+Not+Found'"
+            />
+
+            <!-- Scan grid (subtle) -->
+            <div class="visualizer-grid" id="vis-grid"></div>
+
+            <!-- Heatmap overlay -->
+            <div class="heatmap-overlay {% if not is_fake_result %}hidden{% endif %}" id="heatmap-overlay">
+              <div class="heatmap-gradient hotspot-eyes"></div>
+              <div class="heatmap-gradient hotspot-mouth"></div>
+              <div class="heatmap-gradient hotspot-contour"></div>
+              <div class="detection-dot dot-eye-l"></div>
+              <div class="detection-dot dot-eye-r"></div>
+              <div class="detection-dot dot-mouth"></div>
+            </div>
+
+            <!-- Corner brackets -->
+            <div class="vis-corner tl {% if is_fake_result %}is-fake-corner{% endif %}"></div>
+            <div class="vis-corner tr {% if is_fake_result %}is-fake-corner{% endif %}"></div>
+            <div class="vis-corner bl {% if is_fake_result %}is-fake-corner{% endif %}"></div>
+            <div class="vis-corner br {% if is_fake_result %}is-fake-corner{% endif %}"></div>
+          </div>
+
           <div class="visualizer-controls">
-            <label class="toggle-wrap">
-            <span>Visual Overlay</span>
-              <label class="toggle-switch">
+            <div class="toggle-wrap" onclick="document.getElementById('heatmap-toggle').click()">
+              <label class="toggle-switch" onclick="event.stopPropagation()">
                 <input type="checkbox" id="heatmap-toggle"
-                  {% if record and 'fake' in (record[2]|default('')|lower) %}checked{% endif %}
+                  {% if is_fake_result %}checked{% endif %}
                 />
                 <span class="toggle-slider"></span>
               </label>
-            </label>
-            <span style="font-size:0.72rem;color:var(--text-muted);" id="overlay-status">
-              {% if record and 'fake' in (record[2]|default('')|lower) %}Overlay: ON{% else %}Overlay: OFF{% endif %}
+              <span>Visual Overlay</span>
+            </div>
+            <span class="overlay-badge {% if is_fake_result %}on{% else %}off{% endif %}"
+                  id="overlay-badge">
+              {% if is_fake_result %}Overlay ON{% else %}Overlay OFF{% endif %}
             </span>
           </div>
         </div>
 
-        <!-- ── RIGHT: Insights panel ── -->
+        <!-- ── RIGHT: Insights Panel ── -->
         <div class="insights-panel">
 
-          <!-- SVG Detection Gauge -->
+          <!-- Detection Gauge -->
           <div class="glass-card gauge-card">
-            <div class="gauge-label">Detection Score</div>
+            <div class="gauge-card-title">
+              <span class="gauge-card-title-dot"></span>
+              Detection Score
+            </div>
+
             <div class="gauge-wrap">
-              <svg width="140" height="140" viewBox="0 0 140 140">
+              <svg width="148" height="148" viewBox="0 0 140 140">
                 <circle class="gauge-track" cx="70" cy="70" r="54"/>
                 <circle
-                  class="{% if is_fake %}gauge-fill-fake{% else %}gauge-fill-real{% endif %}"
+                  class="{% if is_fake_result %}gauge-fill-fake{% else %}gauge-fill-real{% endif %}"
                   cx="70" cy="70" r="54"
                   stroke-dasharray="339.3"
-                  stroke-dashoffset="{{ 339.3 - (339.3 * ((record[3] if record and record[3] is not none else 87) / 100)) }}"
+                  stroke-dashoffset="339.3"
                   id="gauge-arc"
+                  data-final="{{ 339.3 - (339.3 * ((record[3] if record and record[3] is not none else 87) / 100)) | round(3) }}"
                 />
               </svg>
               <div class="gauge-center">
-                <div class="gauge-pct {% if is_fake %}fake-color{% else %}real-color{% endif %}" id="gauge-pct">
-                  {{ record[3] if record and record[3] is not none else 87 }}%
+                <div class="gauge-pct {% if is_fake_result %}fake-color{% else %}real-color{% endif %}">
+                  {% if record and record[3] is not none %}{{ record[3] | round(1) }}{% else %}87.0{% endif %}%
                 </div>
                 <div class="gauge-result-label">
-                  {% if is_fake %}Fake confidence{% else %}Real confidence{% endif %}
+                  {% if is_fake_result %}Fake conf.{% else %}Real conf.{% endif %}
                 </div>
               </div>
             </div>
-            <div style="margin-top:1rem;display:flex;justify-content:center;gap:1.25rem;">
-              <div style="text-align:center;">
-                <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Fake</div>
-                <div style="font-size:0.9rem;font-weight:700;color:var(--red);font-family:'JetBrains Mono',monospace;">
-                  {{ fake_score }}%
-                </div>
+
+            <div class="score-row">
+              <div class="score-item">
+                <div class="score-label">Fake Score</div>
+                <div class="score-val" style="color:var(--red);">{{ fake_score }}%</div>
               </div>
-              <div style="width:1px;background:var(--border-color);"></div>
-              <div style="text-align:center;">
-                <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Real</div>
-                <div style="font-size:0.9rem;font-weight:700;color:var(--green);font-family:'JetBrains Mono',monospace;">
-                  {{ real_score }}%
-                </div>
+              <div class="score-divider"></div>
+              <div class="score-item">
+                <div class="score-label">Real Score</div>
+                <div class="score-val" style="color:var(--green);">{{ real_score }}%</div>
               </div>
             </div>
           </div>
 
-          <!-- Model vote log -->
-          <div class="glass-card insights-card">
-            <div class="insights-title">
-              <span style="color:var(--cyan);">&#9655;</span>
+          <!-- Model Votes -->
+          <div class="glass-card section-card">
+            <div class="section-card-title">
+              <span class="section-card-title-dot"></span>
               Model Votes
             </div>
 
             {% if details %}
               {% for model_name, model_data in details.items() %}
-              <div class="insight-item" style="animation-delay:{{ loop.index0 / 10 }}s;">
-                <div class="insight-dot" style="background:{% if 'real' in model_data['label'].lower() %}var(--green){% else %}var(--red){% endif %};"></div>
-                <span>
-                  <strong style="color:var(--text-primary);">{{ model_name }}</strong>
-                  voted {{ model_data['label'] }} at {{ model_data['confidence'] }}% confidence
-                </span>
-              </div>
+                {% set is_real_vote = 'real' in model_data['label'].lower() %}
+                <div class="model-vote-card {% if is_real_vote %}vote-real{% else %}vote-fake{% endif %}"
+                     style="animation-delay:{{ loop.index0 * 0.08 }}s;">
+                  <div class="model-vote-top">
+                    <div class="model-vote-name-wrap">
+                      <div class="model-vote-icon {% if is_real_vote %}real{% else %}fake{% endif %}">
+                        {% if is_real_vote %}✓{% else %}!{% endif %}
+                      </div>
+                      <span class="model-vote-name">{{ model_name }}</span>
+                    </div>
+                    <span class="model-vote-pill {% if is_real_vote %}real{% else %}fake{% endif %}">
+                      {% if is_real_vote %}Real{% else %}Fake{% endif %}
+                    </span>
+                  </div>
+
+                  <div class="model-vote-bar-row">
+                    <div class="model-vote-bar-track">
+                      <div class="model-vote-bar-fill {% if is_real_vote %}real{% else %}fake{% endif %}"
+                           data-target="{{ model_data['confidence'] }}"></div>
+                    </div>
+                    <span class="model-vote-conf"
+                          style="color:{% if is_real_vote %}var(--green){% else %}var(--red){% endif %};">
+                      {{ model_data['confidence'] }}%
+                    </span>
+                  </div>
+                </div>
               {% endfor %}
             {% else %}
-            <div class="insight-item" style="animation-delay:0.1s;">
-              <div class="insight-dot warn"></div>
-              <span>No per-model details were stored for this scan.</span>
-            </div>
+              <div style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0;">
+                No per-model details stored for this scan.
+              </div>
             {% endif %}
           </div>
 
-          <!-- Technical metadata -->
-          <div class="glass-card" style="padding:1.25rem;">
-            <div class="insights-title">
-              <span style="color:var(--cyan);">&#9632;</span>
+          <!-- Scan Metadata -->
+          <div class="glass-card section-card">
+            <div class="section-card-title">
+              <span class="section-card-title-dot"></span>
               Scan Metadata
             </div>
-            <div style="display:flex;flex-direction:column;gap:0.6rem;">
-              <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
-                <span style="color:var(--text-muted);">Model</span>
-                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">Ensemble</span>
+            <div>
+              <div class="meta-row">
+                <span class="meta-key">Model</span>
+                <span class="meta-val">Ensemble</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
-                <span style="color:var(--text-muted);">Input size</span>
-                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">224 &times; 224 px</span>
+              <div class="meta-row">
+                <span class="meta-key">Input size</span>
+                <span class="meta-val">224 &times; 224 px</span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
-                <span style="color:var(--text-muted);">File</span>
-                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;">
-                  {{ record[1] if record else 'demo.jpg' }}
+              <div class="meta-row">
+                <span class="meta-key">Models used</span>
+                <span class="meta-val">
+                  {% if details %}{{ details | length }}{% else %}—{% endif %} model{% if details and details | length != 1 %}s{% endif %}
                 </span>
               </div>
-              <div style="display:flex;justify-content:space-between;font-size:0.78rem;">
-                <span style="color:var(--text-muted);">Scan ID</span>
-                <span style="color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">#{{ record[0] if record else '42' }}</span>
+              <div class="meta-row">
+                <span class="meta-key">File</span>
+                <span class="meta-val" title="{{ record[1] if record else '—' }}">
+                  {{ record[1] if record else '—' }}
+                </span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-key">Scan ID</span>
+                <span class="meta-val">#{{ record[0] if record else '—' }}</span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-key">Scanned</span>
+                <span class="meta-val fmt-ts" data-ts="{{ record[4] if record else '' }}">
+                  {{ record[4] if record else '—' }}
+                </span>
+              </div>
+              <div class="meta-row">
+                <span class="meta-key">Verdict</span>
+                <span class="meta-val"
+                  style="color:{% if is_fake_result %}var(--red){% else %}var(--green){% endif %};">
+                  {% if is_fake_result %}Deepfake{% else %}Authentic{% endif %}
+                </span>
               </div>
             </div>
           </div>
 
-          <!-- Actions -->
-          <div style="display:flex;gap:0.75rem;">
-            <a href="/dashboard" class="btn-ghost" style="flex:1;justify-content:center;">&#8592; Back</a>
-            <a href="/" class="btn-outline-cyan" style="flex:1;justify-content:center;">+ New Scan</a>
+          <!-- Action Buttons -->
+          <div class="actions-row">
+            <a href="/dashboard" class="btn-ghost">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              History
+            </a>
+            <a href="/" class="btn-outline-cyan">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              New Scan
+            </a>
           </div>
 
         </div><!-- /insights-panel -->
@@ -277,46 +1298,122 @@
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  Link copied to clipboard
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
-  /* ── Heatmap toggle ── */
-  const toggle  = document.getElementById('heatmap-toggle');
-  const overlay = document.getElementById('heatmap-overlay');
-  const status  = document.getElementById('overlay-status');
+/* ════════════════════════════════════════════
+   HEATMAP TOGGLE
+════════════════════════════════════════════ */
+(function () {
+  var toggle  = document.getElementById('heatmap-toggle');
+  var overlay = document.getElementById('heatmap-overlay');
+  var badge   = document.getElementById('overlay-badge');
+  var grid    = document.getElementById('vis-grid');
 
-  if (toggle && overlay) {
-    toggle.addEventListener('change', function () {
-      if (this.checked) {
-        overlay.classList.remove('hidden');
-        status.textContent = 'Overlay: ON';
-      } else {
-        overlay.classList.add('hidden');
-        status.textContent = 'Overlay: OFF';
-      }
+  if (!toggle || !overlay) return;
+
+  toggle.addEventListener('change', function () {
+    var on = this.checked;
+    overlay.classList.toggle('hidden', !on);
+    if (grid) grid.classList.toggle('active', on);
+
+    if (badge) {
+      badge.textContent = on ? 'Overlay ON' : 'Overlay OFF';
+      badge.className = 'overlay-badge ' + (on ? 'on' : 'off');
+    }
+  });
+
+  /* Init grid state to match toggle */
+  if (toggle.checked && grid) grid.classList.add('active');
+})();
+
+/* ════════════════════════════════════════════
+   GAUGE ARC ANIMATION
+════════════════════════════════════════════ */
+(function () {
+  var arc = document.getElementById('gauge-arc');
+  if (!arc) return;
+
+  var finalOffset = parseFloat(arc.dataset.final);
+  if (isNaN(finalOffset)) return;
+
+  requestAnimationFrame(function () {
+    setTimeout(function () {
+      arc.style.transition = 'stroke-dashoffset 1.3s cubic-bezier(0.25,1,0.5,1)';
+      arc.setAttribute('stroke-dashoffset', finalOffset);
+    }, 320);
+  });
+})();
+
+/* ════════════════════════════════════════════
+   MODEL VOTE BAR ANIMATIONS
+════════════════════════════════════════════ */
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    document.querySelectorAll('.model-vote-bar-fill[data-target]').forEach(function (bar) {
+      bar.style.width = bar.dataset.target + '%';
     });
+  }, 450);
+});
+
+/* ════════════════════════════════════════════
+   COPY LINK TOAST
+════════════════════════════════════════════ */
+function copyLink() {
+  navigator.clipboard.writeText(window.location.href).then(function () {
+    var toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(function () { toast.classList.remove('show'); }, 2400);
+  }).catch(function () {
+    /* Fallback for browsers that block clipboard */
+    var input = document.createElement('input');
+    input.value = window.location.href;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    var toast = document.getElementById('toast');
+    toast.classList.add('show');
+    setTimeout(function () { toast.classList.remove('show'); }, 2400);
+  });
+}
+
+/* ════════════════════════════════════════════
+   TIMESTAMP FORMATTING
+════════════════════════════════════════════ */
+document.querySelectorAll('.fmt-ts').forEach(function (el) {
+  var raw = el.dataset.ts || el.textContent.trim();
+  if (!raw) return;
+  var d = new Date(raw.replace(' ', 'T'));
+  if (isNaN(d)) return;
+  el.textContent = d.toLocaleDateString('en-IN', {
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+});
+
+/* ════════════════════════════════════════════
+   FILENAME TRUNCATION
+════════════════════════════════════════════ */
+document.querySelectorAll('.fmt-fname').forEach(function (el) {
+  var name = el.textContent.trim();
+  if (name.length > 22) {
+    var ext = name.lastIndexOf('.');
+    if (ext > 0) {
+      el.textContent = name.slice(0, 14) + '…' + name.slice(ext);
+    } else {
+      el.textContent = name.slice(0, 18) + '…';
+    }
+    el.title = name;
   }
-
-  /* ── Animate gauge arc on load ── */
-  (function () {
-    const arc = document.getElementById('gauge-arc');
-    if (!arc) return;
-    const finalOffset = parseFloat(arc.getAttribute('stroke-dashoffset'));
-    arc.setAttribute('stroke-dashoffset', '339.3'); // start at 0%
-    requestAnimationFrame(function () {
-      setTimeout(function () {
-        arc.style.transition = 'stroke-dashoffset 1.2s ease';
-        arc.setAttribute('stroke-dashoffset', finalOffset);
-      }, 200);
-    });
-  })();
-
-  /* ── Copy link ── */
-  function copyLink(btn) {
-    navigator.clipboard.writeText(window.location.href).then(function () {
-      var orig = btn.textContent;
-      btn.textContent = 'Copied!';
-      setTimeout(function () { btn.textContent = orig; }, 1500);
-    });
-  }
+});
 </script>
 </body>
 </html>

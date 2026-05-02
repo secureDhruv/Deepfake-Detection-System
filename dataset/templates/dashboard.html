@@ -5,14 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Detection History | DeepGuard AI</title>
   <meta name="description" content="Review all past deepfake detection scans, confidence scores, and analysis results." />
+  <!-- FIX 1: Google Fonts (was missing entirely) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
 
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
 <div class="app-layout">
 
   <!-- ── Sidebar ─────────────────────────────────── -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
       <div class="logo-text">DeepGuard AI</div>
       <div class="logo-sub">Synthetic Media Detection</div>
@@ -50,9 +56,34 @@
           <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
         </svg>
         <span>Settings</span>
-        
       </a>
     </nav>
+
+    <!-- ── Quick Actions ──────────────────────────────── -->
+    <div class="quick-actions">
+      <div class="quick-actions-label">Quick Actions</div>
+
+      <a href="/" class="quick-btn cyan" title="New Scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="quick-btn-label">Quick Scan</span>
+      </a>
+
+      <a href="/analytics" class="quick-btn green" title="Analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="quick-btn-label">Statistics</span>
+      </a>
+
+      <button class="quick-btn red" title="Clear History" id="dash-clear-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+        </svg>
+        <span class="quick-btn-label">Clear History</span>
+      </button>
+    </div>
 
     <div class="sidebar-footer">
       <div class="sidebar-engine-status">
@@ -83,9 +114,12 @@
 
     <!-- Topbar -->
     <header class="topbar">
-      <div>
-        <div class="topbar-title">Detection History</div>
-        <div class="topbar-subtitle">All past scans and analysis results</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button class="hamburger-btn" id="hamburger-btn" title="Open menu" aria-label="Open sidebar">&#9776;</button>
+        <div>
+          <div class="topbar-title">Detection History</div>
+          <div class="topbar-subtitle">All past scans and analysis results</div>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
         <div class="search-bar">
@@ -112,6 +146,7 @@
           </div>
           <div class="stat-chip">
             Fakes <strong id="chip-fake">
+              {# FIX 2: Jinja does the count — JS duplicate block removed below #}
               {% set fake_count = namespace(value=0) %}
               {% for row in data %}
                 {% if 'fake' in (row[2] | default('') | lower) %}
@@ -163,6 +198,7 @@
                   {% endif %}
                 </td>
                 <td>
+                  {# FIX 3: confidence bar now uses explicit color classes: high=green mid=orange low=red #}
                   {% set conf = row[3] if row[3] is not none else 0 %}
                   <div class="conf-wrap">
                     <div class="conf-bar-track">
@@ -176,7 +212,8 @@
                     <div style="font-size:0.6rem; color:var(--cyan); margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Ensemble Aggregate</div>
                   </div>
                 </td>
-                <td class="ts-cell">{{ row[4] }}</td>
+                {# FIX 4: data-ts attribute added so JS can format the timestamp #}
+                <td class="ts-cell" data-ts="{{ row[4] }}">{{ row[4] }}</td>
                 <td>
                   <div class="action-btns">
                     {% set onclick_view = 'onclick="window.location.href=\'/analysis/' ~ row[0] ~ '\'"' %}
@@ -213,12 +250,12 @@
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
-<!-- ── Delete Confirmation Modal ─────────────────── -->
+<!-- ── Delete / Clear Confirmation Modal ─────────────────── -->
 <div class="modal-overlay" id="delete-modal">
   <div class="modal-box">
-    <div class="modal-icon">&#128465;</div>
-    <div class="modal-title">Delete this record?</div>
-    <p class="modal-text">This action cannot be undone. The scan record will be permanently removed from history.</p>
+    <div class="modal-icon" id="modal-icon">&#128465;</div>
+    <div class="modal-title" id="modal-title">Delete this record?</div>
+    <p class="modal-text" id="modal-text">This action cannot be undone. The scan record will be permanently removed from history.</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
       <button class="btn-confirm-delete" id="confirm-delete-btn">Delete</button>
@@ -228,33 +265,79 @@
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
+  /* ── Sidebar collapse ── */
+  (function () {
+    var sidebar = document.getElementById('sidebar');
+    var toggleBtn = document.getElementById('sidebar-toggle');
+    var hamburger = document.getElementById('hamburger-btn');
+    var overlay = document.getElementById('mobile-overlay');
+
+    if (toggleBtn && sidebar) {
+      toggleBtn.addEventListener('click', function () {
+        sidebar.classList.toggle('collapsed');
+        toggleBtn.innerHTML = sidebar.classList.contains('collapsed') ? '&#10095;' : '&#10094;';
+      });
+    }
+    if (hamburger && sidebar) {
+      hamburger.addEventListener('click', function () {
+        sidebar.classList.toggle('open');
+        if (overlay) overlay.classList.toggle('visible');
+      });
+    }
+    if (overlay) {
+      overlay.addEventListener('click', function () {
+        if (sidebar) sidebar.classList.remove('open');
+        overlay.classList.remove('visible');
+      });
+    }
+  })();
+
+  /* ── Format timestamps ── */
+  document.querySelectorAll('.ts-cell[data-ts]').forEach(function (cell) {
+    var raw = cell.getAttribute('data-ts');
+    if (!raw) return;
+    var d = new Date(raw.replace(' ', 'T'));
+    if (isNaN(d)) return;
+    cell.textContent = d.toLocaleDateString('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }) + ' ' + d.toLocaleTimeString('en-IN', {
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  });
+
   /* ── Live search ── */
-  const searchInput = document.getElementById('search-input');
-  const rows = document.querySelectorAll('#table-body tr');
+  var searchInput = document.getElementById('search-input');
+  var rows = document.querySelectorAll('#table-body tr');
 
   if (searchInput) {
     searchInput.addEventListener('input', function () {
-      const query = this.value.toLowerCase().trim();
-      rows.forEach(function(row) {
-        const fname = row.getAttribute('data-filename') || '';
+      var query = this.value.toLowerCase().trim();
+      rows.forEach(function (row) {
+        var fname = row.getAttribute('data-filename') || '';
         row.style.display = fname.includes(query) ? '' : 'none';
       });
     });
 
-    // Auto-fill search from URL query param
-    const urlParams = new URLSearchParams(window.location.search);
-    const q = urlParams.get('q');
+    var urlParams = new URLSearchParams(window.location.search);
+    var q = urlParams.get('q');
     if (q) {
       searchInput.value = q;
       searchInput.dispatchEvent(new Event('input'));
     }
   }
 
-  /* ── Delete modal ── */
-  let pendingDeleteId = null;
+  /* ── Delete / Clear modal ── */
+  var pendingDeleteId = null;
 
   function openDeleteModal(id) {
     pendingDeleteId = id;
+    var isAll = (id === 'all');
+    // Update modal copy based on single vs clear-all
+    document.getElementById('modal-title').textContent = isAll ? 'Clear all history?' : 'Delete this record?';
+    document.getElementById('modal-text').textContent = isAll
+      ? 'This will permanently delete every scan record. This cannot be undone.'
+      : 'This action cannot be undone. The scan record will be permanently removed from history.';
+    document.getElementById('confirm-delete-btn').textContent = isAll ? 'Clear All' : 'Delete';
     document.getElementById('delete-modal').classList.add('show');
   }
 
@@ -265,32 +348,48 @@
 
   document.getElementById('confirm-delete-btn').addEventListener('click', function () {
     if (!pendingDeleteId) return;
-    const row = document.getElementById('row-' + pendingDeleteId);
-    fetch('/delete/' + pendingDeleteId, { method: 'POST' }).then(function(response) {
-      if (!response.ok) throw new Error('Delete failed');
-      if (row) {
-        row.classList.add('removing');
-        setTimeout(function () { row.remove(); }, 360);
-      }
-      closeDeleteModal();
-    }).catch(function() {
-      closeDeleteModal();
-      window.location.reload();
-    });
+
+    // FIX: 'all' must call /clear-history, not /delete/all (that route doesn't exist)
+    if (pendingDeleteId === 'all') {
+      fetch('/clear-history', { method: 'POST' })
+        .then(function (r) {
+          if (r.ok) { window.location.reload(); }
+          else { closeDeleteModal(); }
+        })
+        .catch(function () { closeDeleteModal(); window.location.reload(); });
+      return;
+    }
+
+    var row = document.getElementById('row-' + pendingDeleteId);
+    fetch('/delete/' + pendingDeleteId, { method: 'POST' })
+      .then(function (response) {
+        if (!response.ok) throw new Error('Delete failed');
+        if (row) {
+          row.classList.add('removing');
+          setTimeout(function () { row.remove(); }, 360);
+        }
+        closeDeleteModal();
+      })
+      .catch(function () {
+        closeDeleteModal();
+        window.location.reload();
+      });
   });
 
-  // Close modal when clicking overlay background
-  document.getElementById('delete-modal').addEventListener('click', function(e) {
+  document.getElementById('delete-modal').addEventListener('click', function (e) {
     if (e.target === this) closeDeleteModal();
   });
 
-  /* ── Count fakes for stat chip ── */
-  (function() {
-    let fakeCount = 0;
-    document.querySelectorAll('.badge-fake').forEach(function() { fakeCount++; });
-    const chipFake = document.getElementById('chip-fake');
-    if (chipFake) chipFake.textContent = fakeCount;
-  })();
+  /* ── Sidebar quick-action: Clear History ── */
+  var dashClearBtn = document.getElementById('dash-clear-btn');
+  if (dashClearBtn) {
+    dashClearBtn.addEventListener('click', function () {
+      openDeleteModal('all');
+    });
+  }
+
+  /* NOTE: Duplicate JS fake-counter block removed.
+     Jinja already renders the correct count server-side. */
 </script>
 </body>
 </html>

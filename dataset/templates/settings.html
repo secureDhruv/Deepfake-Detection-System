@@ -5,26 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Settings | DeepGuard AI</title>
   <meta name="description" content="Configure DeepGuard AI detection settings, model preferences, and display options." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
   <style>
+    /* ════════════════════════════════════════════
+       PAGE
+    ════════════════════════════════════════════ */
+    body { overflow: auto; height: auto; }
+
+    .page-area { animation: fadeUp 0.35s ease both; }
+
+    /* ════════════════════════════════════════════
+       SETTINGS LAYOUT
+    ════════════════════════════════════════════ */
     .settings-grid {
       display: grid;
-      grid-template-columns: 220px 1fr;
+      grid-template-columns: 210px 1fr;
       gap: 1.5rem;
       align-items: start;
     }
 
-    /* Settings nav */
+    /* ════════════════════════════════════════════
+       LEFT NAV
+    ════════════════════════════════════════════ */
     .settings-nav {
       position: sticky;
       top: 85px;
+      padding: 0.5rem;
+    }
+
+    .settings-nav-section {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0.6rem 0.75rem 0.3rem;
     }
 
     .settings-nav-item {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      padding: 0.6rem 0.85rem;
+      gap: 0.65rem;
+      padding: 0.58rem 0.75rem;
       border-radius: var(--radius-sm);
       font-size: 0.83rem;
       font-weight: 500;
@@ -32,6 +58,8 @@
       cursor: pointer;
       transition: all var(--transition);
       border: 1px solid transparent;
+      position: relative;
+      overflow: hidden;
     }
 
     .settings-nav-item:hover {
@@ -45,72 +73,154 @@
       border-color: rgba(0, 242, 255, 0.2);
     }
 
-    .settings-nav-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.6;
+    /* Active left bar */
+    .settings-nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--cyan);
+      border-radius: 0 3px 3px 0;
+      box-shadow: var(--cyan-glow-sm);
+    }
+
+    /* Nav icon */
+    .settings-nav-icon {
+      width: 16px; height: 16px;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .settings-nav-item.active .settings-nav-icon { opacity: 1; }
+
+    /* Nav badge */
+    .settings-nav-badge {
+      margin-left: auto;
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border: 1px solid rgba(0,242,255,0.2);
       flex-shrink: 0;
     }
 
-    /* Settings sections */
+    /* ════════════════════════════════════════════
+       SECTION ANIMATION
+    ════════════════════════════════════════════ */
     .settings-section {
       display: none;
       flex-direction: column;
-      gap: 1.25rem;
-      animation: fadeUp 0.3s ease both;
+      gap: 1.2rem;
+      animation: fadeUp 0.28s ease both;
     }
 
     .settings-section.active { display: flex; }
 
-    .settings-card {
-      padding: 1.5rem;
+    /* ════════════════════════════════════════════
+       SECTION HEADER (above cards)
+    ════════════════════════════════════════════ */
+    .section-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 0.1rem;
     }
 
-    .settings-card-title {
-      font-size: 0.9rem;
+    .section-header-title {
+      font-size: 1rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.25rem;
+    }
+
+    .section-header-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ════════════════════════════════════════════
+       SETTINGS CARD
+    ════════════════════════════════════════════ */
+    .settings-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .settings-card-head {
+      padding: 1.1rem 1.4rem 0.9rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .settings-card-icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.85rem;
+    }
+
+    .settings-card-icon.cyan  { background: var(--cyan-dim);  }
+    .settings-card-icon.green { background: var(--green-dim); }
+    .settings-card-icon.red   { background: var(--red-dim);   }
+
+    .settings-card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
     }
 
     .settings-card-sub {
-      font-size: 0.78rem;
+      font-size: 0.73rem;
       color: var(--text-muted);
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
+      margin-top: 1px;
     }
 
-    /* Setting row */
+    .settings-card-body {
+      padding: 0 1.4rem;
+    }
+
+    /* ════════════════════════════════════════════
+       SETTING ROW
+    ════════════════════════════════════════════ */
     .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.85rem 0;
+      padding: 0.88rem 0;
       border-bottom: 1px solid var(--border-color);
       gap: 1.5rem;
     }
 
-    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
-    .setting-row:first-of-type { padding-top: 0; }
+    .setting-row:last-child {
+      border-bottom: none;
+    }
 
-    .setting-info { flex: 1; }
+    .setting-info { flex: 1; min-width: 0; }
 
     .setting-label {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--text-primary);
       margin-bottom: 2px;
     }
 
     .setting-desc {
-      font-size: 0.75rem;
+      font-size: 0.73rem;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
-    /* Toggle switch reuse */
+    /* ════════════════════════════════════════════
+       TOGGLE SWITCH
+    ════════════════════════════════════════════ */
     .setting-toggle {
       position: relative;
       width: 40px; height: 22px;
@@ -122,11 +232,11 @@
     .setting-toggle-slider {
       position: absolute;
       inset: 0;
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
       border: 1px solid var(--border-color);
       border-radius: 999px;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
     }
 
     .setting-toggle-slider::before {
@@ -136,7 +246,8 @@
       left: 2px; top: 2px;
       background: var(--text-muted);
       border-radius: 50%;
-      transition: all 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
     }
 
     .setting-toggle input:checked + .setting-toggle-slider {
@@ -150,7 +261,9 @@
       background: #000;
     }
 
-    /* Range slider */
+    /* ════════════════════════════════════════════
+       RANGE SLIDER
+    ════════════════════════════════════════════ */
     .setting-range {
       display: flex;
       align-items: center;
@@ -160,6 +273,7 @@
 
     .setting-range input[type="range"] {
       -webkit-appearance: none;
+      appearance: none;
       width: 120px;
       height: 4px;
       border-radius: 999px;
@@ -175,17 +289,25 @@
       background: var(--cyan);
       box-shadow: var(--cyan-glow-sm);
       cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .setting-range input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.2);
     }
 
     .range-val {
       font-size: 0.78rem;
       font-family: 'JetBrains Mono', monospace;
       color: var(--cyan);
-      min-width: 36px;
+      min-width: 38px;
       text-align: right;
+      font-weight: 600;
     }
 
-    /* Select dropdown */
+    /* ════════════════════════════════════════════
+       SELECT DROPDOWN
+    ════════════════════════════════════════════ */
     .setting-select {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
@@ -193,10 +315,10 @@
       color: var(--text-primary);
       font-size: 0.82rem;
       font-family: 'Inter', sans-serif;
-      padding: 0.4rem 0.75rem;
+      padding: 0.42rem 0.75rem;
       outline: none;
       cursor: pointer;
-      transition: border-color var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition);
       min-width: 140px;
     }
 
@@ -205,15 +327,18 @@
       box-shadow: var(--cyan-glow-sm);
     }
 
-    /* Badge tag */
+    /* ════════════════════════════════════════════
+       TAG / BADGE
+    ════════════════════════════════════════════ */
     .tag {
       display: inline-flex;
       align-items: center;
-      padding: 0.2rem 0.6rem;
+      padding: 0.22rem 0.65rem;
       border-radius: 999px;
       font-size: 0.68rem;
       font-weight: 600;
       letter-spacing: 0.4px;
+      white-space: nowrap;
     }
 
     .tag-cyan {
@@ -228,101 +353,260 @@
       border: 1px solid rgba(0,217,126,0.2);
     }
 
-    /* Info box */
+    .tag-red {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(255,56,96,0.2);
+    }
+
+    /* ════════════════════════════════════════════
+       INFO BOX
+    ════════════════════════════════════════════ */
     .info-box {
       background: var(--cyan-dim);
       border: 1px solid rgba(0,242,255,0.15);
       border-radius: var(--radius-sm);
-      padding: 0.85rem 1rem;
-      font-size: 0.8rem;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.79rem;
       color: var(--text-secondary);
       display: flex;
-      gap: 0.6rem;
+      gap: 0.65rem;
       align-items: flex-start;
+      line-height: 1.5;
     }
 
-    .info-box-icon { color: var(--cyan); flex-shrink: 0; margin-top: 1px; }
+    .info-box-icon {
+      color: var(--cyan);
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 0.9rem;
+    }
 
-    /* Save button */
+    .info-box code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.77rem;
+      color: var(--cyan);
+      background: rgba(0,242,255,0.08);
+      padding: 0.05rem 0.3rem;
+      border-radius: 4px;
+    }
+
+    /* ════════════════════════════════════════════
+       SAVE BUTTON (topbar)
+    ════════════════════════════════════════════ */
     .btn-save {
-      padding: 0.6rem 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.35rem;
       background: var(--cyan);
       color: #000;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 700;
       border: none;
       border-radius: var(--radius-sm);
+      cursor: pointer;
       transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
     }
 
-    .btn-save:hover {
-      box-shadow: var(--cyan-glow);
-      transform: translateY(-1px);
+    /* Shimmer on hover */
+    .btn-save::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.45s ease;
     }
 
+    .btn-save:hover::after { left: 160%; }
+    .btn-save:hover { box-shadow: var(--cyan-glow); transform: translateY(-1px); }
     .btn-save:active { transform: scale(0.98); }
 
-    /* Danger zone */
+    /* ════════════════════════════════════════════
+       DANGER ZONE CARD
+    ════════════════════════════════════════════ */
     .danger-card {
-      border-color: rgba(255,56,96,0.25) !important;
+      border-color: rgba(255,56,96,0.22) !important;
+    }
+
+    .danger-card .settings-card-head {
+      border-bottom-color: rgba(255,56,96,0.15);
     }
 
     .danger-card .settings-card-title { color: var(--red); }
 
     .btn-danger {
-      padding: 0.55rem 1.1rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.52rem 1rem;
       background: var(--red-dim);
       border: 1px solid rgba(255,56,96,0.35);
       border-radius: var(--radius-sm);
       color: var(--red);
-      font-size: 0.82rem;
+      font-size: 0.81rem;
       font-weight: 600;
+      cursor: pointer;
       transition: all var(--transition);
       flex-shrink: 0;
     }
 
-    .btn-danger:hover { background: rgba(255,56,96,0.25); }
+    .btn-danger:hover {
+      background: rgba(255,56,96,0.22);
+      border-color: rgba(255,56,96,0.5);
+      box-shadow: 0 0 10px rgba(255,56,96,0.15);
+    }
 
-    /* About info grid */
+    /* ════════════════════════════════════════════
+       ABOUT GRID
+    ════════════════════════════════════════════ */
     .about-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
+      gap: 0.7rem;
+      padding-top: 0.25rem;
     }
 
     .about-item {
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 0.85rem 1rem;
+      padding: 0.8rem 1rem;
+      transition: border-color 0.2s;
     }
 
+    .about-item:hover { border-color: rgba(0,242,255,0.2); }
+
     .about-item-label {
-      font-size: 0.68rem;
-      font-weight: 600;
+      font-size: 0.62rem;
+      font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.7px;
       margin-bottom: 0.3rem;
     }
 
     .about-item-value {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--text-primary);
       font-family: 'JetBrains Mono', monospace;
     }
 
-    /* Toast notification */
+    /* ════════════════════════════════════════════
+       STORAGE METER
+    ════════════════════════════════════════════ */
+    .storage-meter {
+      margin-top: 0.65rem;
+      padding: 0.85rem 1rem;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .storage-meter-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.55rem;
+    }
+
+    .storage-meter-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .storage-meter-val {
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      font-weight: 600;
+    }
+
+    .storage-meter-track {
+      height: 5px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .storage-meter-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--green));
+      box-shadow: 0 0 8px rgba(0,242,255,0.3);
+      width: 0;
+      transition: width 1s cubic-bezier(0.25,1,0.5,1) 0.3s;
+    }
+
+    /* ════════════════════════════════════════════
+       FORMAT CHIPS (Supported Formats)
+    ════════════════════════════════════════════ */
+    .format-chips {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      padding: 0.75rem 0 0.25rem;
+    }
+
+    .format-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0,242,255,0.18);
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.4px;
+    }
+
+    .format-chip-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 4px var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .format-meta {
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .format-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .format-meta-item strong { color: var(--text-secondary); font-weight: 600; }
+
+    /* ════════════════════════════════════════════
+       TOAST
+    ════════════════════════════════════════════ */
     .toast {
       position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
+      bottom: 1.5rem; right: 1.5rem;
       background: #151B27;
-      border: 1px solid rgba(0,242,255,0.25);
+      border: 1px solid rgba(0,242,255,0.28);
       border-radius: var(--radius-sm);
-      padding: 0.75rem 1.25rem;
-      font-size: 0.82rem;
+      padding: 0.72rem 1.2rem;
+      font-size: 0.81rem;
       color: var(--cyan);
       display: flex;
       align-items: center;
@@ -330,61 +614,101 @@
       box-shadow: var(--cyan-glow-sm);
       transform: translateY(80px);
       opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 999;
+      transition: all 0.32s cubic-bezier(0.22,1,0.36,1);
+      z-index: 9999;
+      pointer-events: none;
     }
 
-    .toast.show {
-      transform: translateY(0);
-      opacity: 1;
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ════════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════════ */
+    @media (max-width: 820px) {
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .settings-nav {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.5rem;
+      }
+
+      .settings-nav-section { display: none; }
+
+      .settings-nav-item.active::before { display: none; }
     }
 
-    @media (max-width: 780px) {
-      .settings-grid { grid-template-columns: 1fr; }
-      .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    @media (max-width: 600px) {
       .about-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
 <div class="app-layout">
 
-  <!-- ── Sidebar ─────────────────────────────────── -->
-  <aside class="sidebar">
+  <!-- ════════════════════════════════════════════
+       SIDEBAR
+  ════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">DeepGuard AI</div>
-      <div class="logo-sub">Synthetic Media Detection</div>
+      <div style="display:flex;align-items:center;gap:0.55rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+          stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+          style="flex-shrink:0;filter:drop-shadow(0 0 4px rgba(0,242,255,0.5));">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div>
+          <div class="logo-text">DeepGuard AI</div>
+          <div class="logo-sub">Synthetic Media Detection</div>
+        </div>
+      </div>
       <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar">&#10094;</button>
     </div>
+
     <nav class="sidebar-nav">
       <div class="nav-section-label">Workspace</div>
+
       <a href="/" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
         </svg>
         <span>New Analysis</span>
       </a>
+
       <a href="/dashboard" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
         </svg>
         <span>Detection History</span>
       </a>
+
       <div class="nav-section-label" style="margin-top:0.5rem;">Tools</div>
+
       <a href="/analytics" class="nav-link">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
         <span>Analytics</span>
       </a>
+
       <a href="/settings" class="nav-link active">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
         </svg>
         <span>Settings</span>
       </a>
     </nav>
+
     <div class="sidebar-footer">
       <div class="sidebar-engine-status">
         <span class="status-dot"></span>
@@ -409,293 +733,537 @@
     </div>
   </aside>
 
-  <!-- ── Main ───────────────────────────────────── -->
-  <div class="main-content">
+  <!-- ════════════════════════════════════════════
+       MAIN CONTENT
+  ════════════════════════════════════════════ -->
+  <div class="main-content" id="main-content">
+
     <header class="topbar">
-      <div>
-        <div class="topbar-title">Settings</div>
-        <div class="topbar-subtitle">Manage model, display, and system preferences</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button class="hamburger-btn" id="hamburger-btn" title="Open menu" aria-label="Open sidebar">&#9776;</button>
+        <div>
+          <div class="topbar-title">Settings</div>
+          <div class="topbar-subtitle">Manage model, display, and system preferences</div>
+        </div>
       </div>
-      <button class="btn-save" onclick="saveSettings()">Save Changes</button>
+      <button class="btn-save" id="save-btn" onclick="saveSettings()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Save Changes
+      </button>
     </header>
 
     <div class="page-area">
       <div class="settings-grid">
 
-        <!-- Left nav -->
-        <div class="glass-card settings-nav" style="padding:0.5rem;">
-          <div class="settings-nav-item active" onclick="switchTab(this,'tab-model')">
-            <span class="settings-nav-dot"></span> Model
+        <!-- ════════════════════════════════
+             LEFT NAV
+        ════════════════════════════════ -->
+        <div class="glass-card settings-nav" id="settings-nav">
+
+          <div class="settings-nav-section">Configuration</div>
+
+          <div class="settings-nav-item active" onclick="switchTab(this,'tab-model')" id="nav-model">
+            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+            </svg>
+            Model
           </div>
-          <div class="settings-nav-item" onclick="switchTab(this,'tab-display')">
-            <span class="settings-nav-dot"></span> Display
+
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-display')" id="nav-display">
+            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            Display
           </div>
-          <div class="settings-nav-item" onclick="switchTab(this,'tab-storage')">
-            <span class="settings-nav-dot"></span> Storage
+
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-storage')" id="nav-storage">
+            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+            </svg>
+            Storage
+            <span class="settings-nav-badge" id="nav-storage-badge">{{ record_count }}</span>
           </div>
-          <div class="settings-nav-item" onclick="switchTab(this,'tab-about')">
-            <span class="settings-nav-dot"></span> About
+
+          <div class="settings-nav-section" style="margin-top:0.35rem;">System</div>
+
+          <div class="settings-nav-item" onclick="switchTab(this,'tab-about')" id="nav-about">
+            <svg class="settings-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            About
           </div>
+
         </div>
 
-        <!-- Right content -->
+        <!-- ════════════════════════════════
+             RIGHT CONTENT
+        ════════════════════════════════ -->
         <div>
 
-          <!-- ── TAB: Model ── -->
+          <!-- ════════════════ TAB: MODEL ════════════════ -->
           <div class="settings-section active" id="tab-model">
 
+            <div class="section-header">
+              <div>
+                <div class="section-header-title">Detection Model</div>
+                <div class="section-header-sub">Configure the AI engine used for analysis</div>
+              </div>
+            </div>
+
             <div class="glass-card settings-card">
-              <div class="settings-card-title">Detection Model</div>
-              <div class="settings-card-sub">Configure the AI engine used for analysis</div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Active Model</div>
-                  <div class="setting-desc">The neural network architecture currently powering detections</div>
+              <div class="settings-card-head">
+                <div class="settings-card-icon cyan">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                  </svg>
                 </div>
-                <span class="tag tag-cyan">Ensemble / MobileNetV2 / ResNet50V2 / Xception</span>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Confidence Threshold</div>
-                  <div class="setting-desc">Minimum score to classify a result as Deepfake. Higher = more strict.</div>
-                </div>
-                <div class="setting-range">
-                  <input type="range" id="conf-threshold" min="40" max="95" value="50"
-                    oninput="document.getElementById('conf-val').textContent=this.value+'%'" />
-                  <span class="range-val" id="conf-val">50%</span>
+                <div>
+                  <div class="settings-card-title">Ensemble Configuration</div>
+                  <div class="settings-card-sub">Active neural network models and inference parameters</div>
                 </div>
               </div>
+              <div class="settings-card-body">
 
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Input Resolution</div>
-                  <div class="setting-desc">Image resize dimension fed into the model (fixed by architecture)</div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Active Model Stack</div>
+                    <div class="setting-desc">Neural architectures currently powering detections</div>
+                  </div>
+                  <div style="display:flex;gap:0.35rem;flex-wrap:wrap;justify-content:flex-end;">
+                    {% if engine_models %}
+                      {% for m in engine_models %}
+                        <span class="tag tag-cyan">{{ m }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="tag tag-cyan">MobileNetV2</span>
+                      <span class="tag tag-cyan">Xception</span>
+                    {% endif %}
+                  </div>
                 </div>
-                <span class="tag tag-cyan">224 &times; 224 px</span>
-              </div>
 
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Data Augmentation</div>
-                  <div class="setting-desc">Enable training-time augmentation for improved robustness</div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Confidence Threshold</div>
+                    <div class="setting-desc">Minimum score to classify as Deepfake. Higher = more strict.</div>
+                  </div>
+                  <div class="setting-range">
+                    <input type="range" id="conf-threshold" min="40" max="95" value="50"
+                      oninput="document.getElementById('conf-val').textContent=this.value+'%'" />
+                    <span class="range-val" id="conf-val">50%</span>
+                  </div>
                 </div>
-                <label class="setting-toggle">
-                  <input type="checkbox" id="aug-toggle" checked />
-                  <span class="setting-toggle-slider"></span>
-                </label>
-              </div>
 
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Fine-Tuning Mode</div>
-                  <div class="setting-desc">Unfreeze base model layers for advanced retraining (requires GPU)</div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Input Resolution</div>
+                    <div class="setting-desc">Image resize dimension fed into the model (fixed by architecture)</div>
+                  </div>
+                  <span class="tag tag-cyan">224 &times; 224 px</span>
                 </div>
-                <label class="setting-toggle">
-                  <input type="checkbox" id="finetune-toggle" />
-                  <span class="setting-toggle-slider"></span>
-                </label>
-              </div>
 
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Data Augmentation</div>
+                    <div class="setting-desc">Enable training-time augmentation for improved robustness</div>
+                  </div>
+                  <label class="setting-toggle">
+                    <input type="checkbox" id="aug-toggle" checked />
+                    <span class="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Fine-Tuning Mode</div>
+                    <div class="setting-desc">Unfreeze base layers for retraining (requires GPU)</div>
+                  </div>
+                  <label class="setting-toggle">
+                    <input type="checkbox" id="finetune-toggle" />
+                    <span class="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+              </div>
             </div>
 
             <div class="info-box">
-              <span class="info-box-icon">&#9432;</span>
-              <span>Model files are stored in <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">dataset/model/</code>. Retrain using <code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);">python train_ensemble.py</code>.</span>
+              <span class="info-box-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </span>
+              <span>
+                Model files are stored in <code>dataset/model/</code>.
+                Retrain using <code>python train_ensemble.py</code>.
+                The ensemble averages predictions across all loaded <code>.h5</code> files.
+              </span>
             </div>
-          </div>
 
-          <!-- ── TAB: Display ── -->
+          </div><!-- /tab-model -->
+
+          <!-- ════════════════ TAB: DISPLAY ════════════════ -->
           <div class="settings-section" id="tab-display">
-            <div class="glass-card settings-card">
-              <div class="settings-card-title">Interface Preferences</div>
-              <div class="settings-card-sub">Customize how the dashboard looks and behaves</div>
 
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Show Visual Overlay by Default</div>
-                  <div class="setting-desc">Auto-enable the visual overlay when opening analysis results</div>
-                </div>
-                <label class="setting-toggle">
-                  <input type="checkbox" id="heatmap-default" checked />
-                  <span class="setting-toggle-slider"></span>
-                </label>
+            <div class="section-header">
+              <div>
+                <div class="section-header-title">Interface Preferences</div>
+                <div class="section-header-sub">Customize how the dashboard looks and behaves</div>
               </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Sidebar Default State</div>
-                  <div class="setting-desc">Start with the sidebar expanded or collapsed on page load</div>
-                </div>
-                <select class="setting-select" id="sidebar-default">
-                  <option value="expanded">Expanded</option>
-                  <option value="collapsed">Collapsed</option>
-                </select>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Table Rows Per Page</div>
-                  <div class="setting-desc">Number of detections shown in the history table</div>
-                </div>
-                <select class="setting-select" id="rows-per-page">
-                  <option value="10">10 rows</option>
-                  <option value="25" selected>25 rows</option>
-                  <option value="50">50 rows</option>
-                  <option value="all">All</option>
-                </select>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Animations</div>
-                  <div class="setting-desc">Enable fade-in, slide-up, and pulse animations across the UI</div>
-                </div>
-                <label class="setting-toggle">
-                  <input type="checkbox" id="animations-toggle" checked />
-                  <span class="setting-toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Confidence Bar Color</div>
-                  <div class="setting-desc">Color scheme used on confidence bars in the history table</div>
-                </div>
-                <select class="setting-select" id="conf-color">
-                  <option value="traffic" selected>Traffic Light</option>
-                  <option value="mono">Monochrome</option>
-                  <option value="cyan">Cyan Only</option>
-                </select>
-              </div>
-
             </div>
-          </div>
 
-          <!-- ── TAB: Storage ── -->
+            <div class="glass-card settings-card">
+              <div class="settings-card-head">
+                <div class="settings-card-icon cyan">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M20.188 10.934a1 1 0 0 0 0-1.868l-2.77-.92a7.964 7.964 0 0 0-.576-1.39l1.2-2.601a1 1 0 0 0-1.32-1.32l-2.602 1.2a7.964 7.964 0 0 0-1.39-.576l-.92-2.77a1 1 0 0 0-1.868 0l-.92 2.77a7.964 7.964 0 0 0-1.39.576L5.45 2.835a1 1 0 0 0-1.32 1.32l1.2 2.602a7.964 7.964 0 0 0-.576 1.39l-2.77.92a1 1 0 0 0 0 1.868l2.77.92a7.964 7.964 0 0 0 .576 1.39l-1.2 2.601a1 1 0 0 0 1.32 1.32l2.602-1.2a7.964 7.964 0 0 0 1.39.576l.92 2.77a1 1 0 0 0 1.868 0l.92-2.77a7.964 7.964 0 0 0 1.39-.576l2.601 1.2a1 1 0 0 0 1.32-1.32l-1.2-2.602a7.964 7.964 0 0 0 .576-1.39z"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-card-title">Visual Settings</div>
+                  <div class="settings-card-sub">Appearance, layout, and animation preferences</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Visual Overlay by Default</div>
+                    <div class="setting-desc">Auto-enable the heatmap overlay when opening analysis results</div>
+                  </div>
+                  <label class="setting-toggle">
+                    <input type="checkbox" id="heatmap-default" checked />
+                    <span class="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Sidebar Default State</div>
+                    <div class="setting-desc">Start expanded or collapsed on page load</div>
+                  </div>
+                  <select class="setting-select" id="sidebar-default">
+                    <option value="expanded">Expanded</option>
+                    <option value="collapsed">Collapsed</option>
+                  </select>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Table Rows Per Page</div>
+                    <div class="setting-desc">Number of detections shown in the history table</div>
+                  </div>
+                  <select class="setting-select" id="rows-per-page">
+                    <option value="10">10 rows</option>
+                    <option value="25" selected>25 rows</option>
+                    <option value="50">50 rows</option>
+                    <option value="all">All rows</option>
+                  </select>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">UI Animations</div>
+                    <div class="setting-desc">Enable fade-in, slide-up and pulse animations across pages</div>
+                  </div>
+                  <label class="setting-toggle">
+                    <input type="checkbox" id="animations-toggle" checked />
+                    <span class="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Confidence Bar Color</div>
+                    <div class="setting-desc">Color scheme for confidence bars in the detection history</div>
+                  </div>
+                  <select class="setting-select" id="conf-color">
+                    <option value="traffic" selected>Traffic Light</option>
+                    <option value="mono">Monochrome</option>
+                    <option value="cyan">Cyan Only</option>
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+          </div><!-- /tab-display -->
+
+          <!-- ════════════════ TAB: STORAGE ════════════════ -->
           <div class="settings-section" id="tab-storage">
-            <div class="glass-card settings-card">
-              <div class="settings-card-title">Storage & Data</div>
-              <div class="settings-card-sub">Manage your stored scan records and uploaded files</div>
 
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Total Scan Records</div>
-                  <div class="setting-desc">Number of detections stored in the database</div>
-                </div>
-                <span class="tag tag-green">{{ record_count }} records</span>
+            <div class="section-header">
+              <div>
+                <div class="section-header-title">Storage &amp; Data</div>
+                <div class="section-header-sub">Manage scan records, uploads, and database</div>
               </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Database File</div>
-                  <div class="setting-desc">SQLite database location on your system</div>
-                </div>
-                <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);">history.db</span>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Auto-Delete Uploads</div>
-                  <div class="setting-desc">Automatically remove uploaded image files after analysis</div>
-                </div>
-                <label class="setting-toggle">
-                  <input type="checkbox" id="auto-delete-toggle" />
-                  <span class="setting-toggle-slider"></span>
-                </label>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Max Upload Size</div>
-                  <div class="setting-desc">Maximum allowed image file size per scan</div>
-                </div>
-                <span class="tag tag-cyan">10 MB</span>
-              </div>
-
             </div>
 
+            <div class="glass-card settings-card">
+              <div class="settings-card-head">
+                <div class="settings-card-icon green">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-card-title">Database &amp; Uploads</div>
+                  <div class="settings-card-sub">Current storage usage and file management</div>
+                </div>
+              </div>
+              <div class="settings-card-body">
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Total Scan Records</div>
+                    <div class="setting-desc">Detection entries stored in the SQLite database</div>
+                  </div>
+                  <span class="tag tag-green">{{ record_count }} records</span>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Database File</div>
+                    <div class="setting-desc">SQLite database location on your system</div>
+                  </div>
+                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);">
+                    history.db
+                  </span>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Max Upload Size</div>
+                    <div class="setting-desc">Maximum allowed image file size per scan</div>
+                  </div>
+                  <span class="tag tag-cyan">10 MB</span>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Auto-Delete Uploads</div>
+                    <div class="setting-desc">Remove image files automatically after analysis completes</div>
+                  </div>
+                  <label class="setting-toggle">
+                    <input type="checkbox" id="auto-delete-toggle" />
+                    <span class="setting-toggle-slider"></span>
+                  </label>
+                </div>
+
+              </div>
+
+              <!-- Storage usage meter -->
+              <div class="settings-card-body" style="padding-bottom:1.1rem;">
+                <div class="storage-meter">
+                  <div class="storage-meter-header">
+                    <span class="storage-meter-label">Database Usage</span>
+                    <span class="storage-meter-val" id="storage-pct">
+                      {{ [((record_count / 1000) * 100) | round(0) | int, 100] | min }}%
+                    </span>
+                  </div>
+                  <div class="storage-meter-track">
+                    <div class="storage-meter-fill" id="storage-fill"
+                         data-target="{{ [((record_count / 1000) * 100) | round(0) | int, 100] | min }}">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Danger Zone -->
             <div class="glass-card settings-card danger-card">
-              <div class="settings-card-title">&#9888; Danger Zone</div>
-              <div class="settings-card-sub">These actions are permanent and cannot be undone</div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Clear All History</div>
-                  <div class="setting-desc">Permanently delete all scan records from the database</div>
+              <div class="settings-card-head">
+                <div class="settings-card-icon red">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
                 </div>
-                <button class="btn-danger" onclick="confirmClear()">Clear All</button>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-info">
-                  <div class="setting-label">Delete All Uploads</div>
-                  <div class="setting-desc">Remove all images stored in the uploads folder</div>
+                <div>
+                  <div class="settings-card-title">Danger Zone</div>
+                  <div class="settings-card-sub">Irreversible actions — proceed with caution</div>
                 </div>
-                <button class="btn-danger" onclick="confirmDeleteUploads()">Delete Files</button>
               </div>
+              <div class="settings-card-body">
 
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Clear All History</div>
+                    <div class="setting-desc">Permanently delete all scan records from the database</div>
+                  </div>
+                  <button class="btn-danger" onclick="triggerDanger('clear-history','Clear All History?','All {{ record_count }} scan records will be permanently deleted from the database.')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    </svg>
+                    Clear All
+                  </button>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-label">Delete All Uploads</div>
+                    <div class="setting-desc">Remove all image files stored in the uploads folder</div>
+                  </div>
+                  <button class="btn-danger" onclick="triggerDanger('clear-uploads','Delete All Uploads?','All image files in the uploads folder will be permanently removed.')">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    </svg>
+                    Delete Files
+                  </button>
+                </div>
+
+              </div>
             </div>
-          </div>
 
-          <!-- ── TAB: About ── -->
+          </div><!-- /tab-storage -->
+
+          <!-- ════════════════ TAB: ABOUT ════════════════ -->
           <div class="settings-section" id="tab-about">
-            <div class="glass-card settings-card">
-              <div class="settings-card-title">System Information</div>
-              <div class="settings-card-sub">Details about your DeepGuard AI installation</div>
 
-              <div class="about-grid">
-                <div class="about-item">
-                  <div class="about-item-label">Application</div>
-                  <div class="about-item-value">DeepGuard AI</div>
+            <div class="section-header">
+              <div>
+                <div class="section-header-title">System Information</div>
+                <div class="section-header-sub">Details about your DeepGuard AI installation</div>
+              </div>
+            </div>
+
+            <!-- System info grid -->
+            <div class="glass-card settings-card">
+              <div class="settings-card-head">
+                <div class="settings-card-icon cyan">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  </svg>
                 </div>
-                <div class="about-item">
-                  <div class="about-item-label">Version</div>
-                  <div class="about-item-value">1.0.0</div>
+                <div>
+                  <div class="settings-card-title">Installation Details</div>
+                  <div class="settings-card-sub">Runtime versions and system configuration</div>
                 </div>
-                <div class="about-item">
-                  <div class="about-item-label">Backend</div>
-                  <div class="about-item-value">Flask + Python</div>
-                </div>
-                <div class="about-item">
-                  <div class="about-item-label">ML Framework</div>
-                  <div class="about-item-value">TensorFlow 2.x</div>
-                </div>
-                <div class="about-item">
-                  <div class="about-item-label">Model</div>
-                  <div class="about-item-value">Ensemble</div>
-                </div>
-                <div class="about-item">
-                  <div class="about-item-label">Database</div>
-                  <div class="about-item-value">SQLite 3</div>
-                </div>
-                <div class="about-item">
-                  <div class="about-item-label">Model Size</div>
-                  <div class="about-item-value">~185 MB</div>
-                </div>
-                <div class="about-item">
-                  <div class="about-item-label">Status</div>
-                  <div class="about-item-value" style="color:var(--green);">&#9679; Online</div>
+              </div>
+              <div class="settings-card-body" style="padding-top:0.85rem;padding-bottom:1.1rem;">
+                <div class="about-grid">
+                  <div class="about-item">
+                    <div class="about-item-label">Application</div>
+                    <div class="about-item-value">DeepGuard AI</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Version</div>
+                    <div class="about-item-value">1.0.0</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Backend</div>
+                    <div class="about-item-value">Flask 3.1.3</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">ML Framework</div>
+                    <div class="about-item-value">TensorFlow 2.21</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Model Type</div>
+                    <div class="about-item-value">Ensemble CNN</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Database</div>
+                    <div class="about-item-value">SQLite 3</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Model Size</div>
+                    <div class="about-item-value">~185 MB</div>
+                  </div>
+                  <div class="about-item">
+                    <div class="about-item-label">Status</div>
+                    <div class="about-item-value" style="color:var(--green);">
+                      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);margin-right:5px;vertical-align:middle;animation:pulse-dot 2s infinite;"></span>
+                      Online
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- Supported formats -->
             <div class="glass-card settings-card">
-              <div class="settings-card-title">Supported Formats</div>
-              <div class="settings-card-sub">File types accepted by the detection engine</div>
-              <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:0.5rem;">
-                <span class="tag tag-cyan">PNG</span>
-                <span class="tag tag-cyan">JPG / JPEG</span>
-                <span class="tag tag-cyan">WEBP</span>
+              <div class="settings-card-head">
+                <div class="settings-card-icon cyan">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-card-title">Supported Formats</div>
+                  <div class="settings-card-sub">File types accepted by the detection engine</div>
+                </div>
               </div>
-              <div style="margin-top:1rem;font-size:0.8rem;color:var(--text-muted);">
-                Max upload size: <strong style="color:var(--text-secondary);">10 MB</strong> &nbsp;&middot;&nbsp;
-                Input resolution: <strong style="color:var(--text-secondary);">224 &times; 224 px</strong>
+              <div class="settings-card-body" style="padding-top:0;padding-bottom:1.1rem;">
+                <div class="format-chips">
+                  <div class="format-chip">
+                    <span class="format-chip-dot"></span>
+                    PNG
+                  </div>
+                  <div class="format-chip">
+                    <span class="format-chip-dot"></span>
+                    JPG / JPEG
+                  </div>
+                  <div class="format-chip">
+                    <span class="format-chip-dot"></span>
+                    WEBP
+                  </div>
+                </div>
+                <div class="format-meta">
+                  <div class="format-meta-item">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Max upload: <strong>10 MB</strong>
+                  </div>
+                  <div class="format-meta-item">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);">
+                      <rect x="2" y="2" width="20" height="20" rx="2"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/>
+                    </svg>
+                    Input: <strong>224 &times; 224 px</strong>
+                  </div>
+                  <div class="format-meta-item">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-muted);">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Face detection: <strong>Haar Cascade</strong>
+                  </div>
+                </div>
               </div>
             </div>
 
-          </div>
+            <!-- Quick links -->
+            <div class="glass-card settings-card">
+              <div class="settings-card-head">
+                <div class="settings-card-icon cyan">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="settings-card-title">Quick Links</div>
+                  <div class="settings-card-sub">Useful pages and developer resources</div>
+                </div>
+              </div>
+              <div class="settings-card-body" style="padding-bottom:1.1rem;">
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;padding-top:0.75rem;">
+                  <a href="/" class="btn-outline-cyan" style="font-size:0.8rem;padding:0.45rem 0.9rem;">
+                    + New Scan
+                  </a>
+                  <a href="/dashboard" class="btn-ghost" style="font-size:0.8rem;padding:0.45rem 0.9rem;">
+                    Detection History
+                  </a>
+                  <a href="/analytics" class="btn-ghost" style="font-size:0.8rem;padding:0.45rem 0.9rem;">
+                    Analytics
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /tab-about -->
 
         </div><!-- /right content -->
       </div><!-- /settings-grid -->
@@ -703,15 +1271,25 @@
   </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
-<!-- Toast notification -->
-<div class="toast" id="save-toast">&#10003; Settings saved</div>
+<!-- Toast -->
+<div class="toast" id="save-toast">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toast-msg">Settings saved</span>
+</div>
 
 <!-- Danger confirm modal -->
 <div class="modal-overlay" id="danger-modal">
   <div class="modal-box">
-    <div class="modal-icon">&#9888;</div>
+    <div class="modal-icon" style="color:var(--red);">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
     <div class="modal-title" id="danger-title">Are you sure?</div>
-    <p class="modal-text" id="danger-text">This action is permanent.</p>
+    <p class="modal-text" id="danger-text">This action is permanent and cannot be undone.</p>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeDangerModal()">Cancel</button>
       <button class="btn-confirm-delete" id="danger-confirm-btn">Confirm</button>
@@ -721,51 +1299,180 @@
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
-  /* ── Tab switching ── */
-  function switchTab(el, tabId) {
-    document.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
-    document.querySelectorAll('.settings-section').forEach(function(s) { s.classList.remove('active'); });
-    el.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-  }
-
-  /* ── Save toast ── */
-  function saveSettings() {
-    var toast = document.getElementById('save-toast');
-    toast.classList.add('show');
-    setTimeout(function() { toast.classList.remove('show'); }, 2500);
-  }
-
-  /* ── Danger modal ── */
-  var dangerCallback = null;
-
-  function confirmClear() {
-    document.getElementById('danger-title').textContent = 'Clear All History?';
-    document.getElementById('danger-text').textContent = 'All scan records will be permanently deleted from the database.';
-    dangerCallback = function() { fetch('/clear-history', { method: 'POST' }).then(function() { window.location.reload(); }); };
-    document.getElementById('danger-modal').classList.add('show');
-  }
-
-  function confirmDeleteUploads() {
-    document.getElementById('danger-title').textContent = 'Delete All Uploads?';
-    document.getElementById('danger-text').textContent = 'All image files in the uploads folder will be permanently removed.';
-    dangerCallback = function() { fetch('/clear-uploads', { method: 'POST' }).then(function() { saveSettings(); }); };
-    document.getElementById('danger-modal').classList.add('show');
-  }
-
-  function closeDangerModal() {
-    dangerCallback = null;
-    document.getElementById('danger-modal').classList.remove('show');
-  }
-
-  document.getElementById('danger-confirm-btn').addEventListener('click', function() {
-    if (dangerCallback) dangerCallback();
-    closeDangerModal();
+/* ════════════════════════════════════════════
+   TAB SWITCHING
+════════════════════════════════════════════ */
+function switchTab(el, tabId) {
+  document.querySelectorAll('.settings-nav-item').forEach(function (i) {
+    i.classList.remove('active');
   });
-
-  document.getElementById('danger-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeDangerModal();
+  document.querySelectorAll('.settings-section').forEach(function (s) {
+    s.classList.remove('active');
   });
+  el.classList.add('active');
+  var section = document.getElementById(tabId);
+  if (section) section.classList.add('active');
+
+  /* Persist tab in URL hash without scroll */
+  history.replaceState(null, '', '#' + tabId);
+}
+
+/* Restore tab from URL hash on load */
+(function () {
+  var hash = window.location.hash.replace('#', '');
+  var validTabs = ['tab-model', 'tab-display', 'tab-storage', 'tab-about'];
+  if (hash && validTabs.includes(hash)) {
+    var navMap = {
+      'tab-model':   'nav-model',
+      'tab-display': 'nav-display',
+      'tab-storage': 'nav-storage',
+      'tab-about':   'nav-about'
+    };
+    var navEl = document.getElementById(navMap[hash]);
+    if (navEl) switchTab(navEl, hash);
+  }
+})();
+
+/* ════════════════════════════════════════════
+   STORAGE METER ANIMATION
+════════════════════════════════════════════ */
+window.addEventListener('load', function () {
+  setTimeout(function () {
+    var fill = document.getElementById('storage-fill');
+    if (fill) fill.style.width = fill.dataset.target + '%';
+  }, 400);
+});
+
+/* ════════════════════════════════════════════
+   SAVE TOAST
+════════════════════════════════════════════ */
+function showToast(msg, isError) {
+  var toast = document.getElementById('save-toast');
+  var msgEl = document.getElementById('toast-msg');
+  if (msgEl) msgEl.textContent = msg || 'Settings saved';
+  toast.style.borderColor = isError
+    ? 'rgba(255,56,96,0.35)'
+    : 'rgba(0,242,255,0.28)';
+  toast.style.color = isError ? 'var(--red)' : 'var(--cyan)';
+  toast.classList.add('show');
+  setTimeout(function () { toast.classList.remove('show'); }, 2600);
+}
+
+function saveSettings() {
+  /* Collect current values for potential future persistence */
+  var payload = {
+    conf_threshold:  document.getElementById('conf-threshold')  ? document.getElementById('conf-threshold').value  : 50,
+    aug_toggle:      document.getElementById('aug-toggle')      ? document.getElementById('aug-toggle').checked      : true,
+    finetune_toggle: document.getElementById('finetune-toggle') ? document.getElementById('finetune-toggle').checked : false,
+    heatmap_default: document.getElementById('heatmap-default') ? document.getElementById('heatmap-default').checked : true,
+    sidebar_default: document.getElementById('sidebar-default') ? document.getElementById('sidebar-default').value  : 'expanded',
+    rows_per_page:   document.getElementById('rows-per-page')   ? document.getElementById('rows-per-page').value    : 25,
+    animations:      document.getElementById('animations-toggle') ? document.getElementById('animations-toggle').checked : true,
+    conf_color:      document.getElementById('conf-color')      ? document.getElementById('conf-color').value        : 'traffic',
+    auto_delete:     document.getElementById('auto-delete-toggle') ? document.getElementById('auto-delete-toggle').checked : false
+  };
+
+  /* Save to localStorage for client-side persistence */
+  try {
+    localStorage.setItem('dg_settings', JSON.stringify(payload));
+  } catch (_) {}
+
+  /* Apply sidebar default immediately */
+  if (payload.sidebar_default === 'collapsed') {
+    localStorage.setItem('dg_sidebar_collapsed', '1');
+  } else {
+    localStorage.setItem('dg_sidebar_collapsed', '0');
+  }
+
+  showToast('✓ Settings saved');
+}
+
+/* ════════════════════════════════════════════
+   LOAD SAVED SETTINGS ON PAGE OPEN
+════════════════════════════════════════════ */
+(function () {
+  try {
+    var saved = JSON.parse(localStorage.getItem('dg_settings') || '{}');
+
+    if (saved.conf_threshold !== undefined) {
+      var slider = document.getElementById('conf-threshold');
+      var label  = document.getElementById('conf-val');
+      if (slider) { slider.value = saved.conf_threshold; }
+      if (label)  { label.textContent = saved.conf_threshold + '%'; }
+    }
+
+    var boolMap = {
+      aug_toggle:       'aug-toggle',
+      finetune_toggle:  'finetune-toggle',
+      heatmap_default:  'heatmap-default',
+      animations:       'animations-toggle',
+      auto_delete:      'auto-delete-toggle'
+    };
+
+    Object.keys(boolMap).forEach(function (key) {
+      if (saved[key] !== undefined) {
+        var el = document.getElementById(boolMap[key]);
+        if (el) el.checked = saved[key];
+      }
+    });
+
+    var selectMap = {
+      sidebar_default: 'sidebar-default',
+      rows_per_page:   'rows-per-page',
+      conf_color:      'conf-color'
+    };
+
+    Object.keys(selectMap).forEach(function (key) {
+      if (saved[key] !== undefined) {
+        var el = document.getElementById(selectMap[key]);
+        if (el) el.value = saved[key];
+      }
+    });
+  } catch (_) {}
+})();
+
+/* ════════════════════════════════════════════
+   DANGER MODAL
+════════════════════════════════════════════ */
+var dangerEndpoint = null;
+
+function triggerDanger(endpoint, title, text) {
+  dangerEndpoint = endpoint;
+  document.getElementById('danger-title').textContent = title;
+  document.getElementById('danger-text').textContent  = text;
+  document.getElementById('danger-modal').classList.add('show');
+}
+
+function closeDangerModal() {
+  dangerEndpoint = null;
+  document.getElementById('danger-modal').classList.remove('show');
+}
+
+document.getElementById('danger-confirm-btn').addEventListener('click', function () {
+  if (!dangerEndpoint) return;
+  var ep = dangerEndpoint;
+  closeDangerModal();
+
+  fetch('/' + ep, { method: 'POST' })
+    .then(function (r) {
+      if (r.ok || r.status === 204) {
+        showToast('✓ Done');
+        /* Update storage badge */
+        var badge = document.getElementById('nav-storage-badge');
+        if (badge && ep === 'clear-history') badge.textContent = '0';
+        setTimeout(function () { window.location.reload(); }, 900);
+      } else {
+        showToast('Action failed', true);
+      }
+    })
+    .catch(function () {
+      showToast('Network error', true);
+    });
+});
+
+document.getElementById('danger-modal').addEventListener('click', function (e) {
+  if (e.target === this) closeDangerModal();
+});
 </script>
 </body>
 </html>

@@ -5,17 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DeepGuard AI — Deepfake Detection</title>
   <meta name="description" content="Upload an image to instantly detect deepfakes, or configure your DeepGuard AI settings." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   <style>
-    /* ── Tab bar ── */
+
+    /* ══════════════════════════════════════════════
+       TAB BAR
+    ══════════════════════════════════════════════ */
     .tab-bar {
       display: flex;
       align-items: center;
       gap: 0.25rem;
       padding: 0.5rem 2rem 0;
       border-bottom: 1px solid var(--border-color);
-      background: rgba(11, 14, 20, 0.8);
-      backdrop-filter: blur(10px);
+      background: rgba(11, 14, 20, 0.85);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
     }
 
     .tab-btn {
@@ -33,34 +40,471 @@
       cursor: pointer;
       transition: all 0.2s ease;
       font-family: 'Inter', sans-serif;
+      position: relative;
     }
-
     .tab-btn:hover { color: var(--text-secondary); }
-
-    .tab-btn.active {
-      color: var(--cyan);
-      border-bottom-color: var(--cyan);
-    }
-
+    .tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
     .tab-icon { font-size: 0.9rem; }
 
-    /* ── Tab content panels ── */
+    /* ══════════════════════════════════════════════
+       TAB PANELS
+    ══════════════════════════════════════════════ */
     .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+    .tab-panel.active {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      animation: fadeIn 0.22s ease both;
+    }
+    #panel-settings { overflow-y: auto; }
 
-    /* ── Settings (reused from settings.html) ── */
+    /* ══════════════════════════════════════════════
+       REDESIGN: BRAND BADGE — pulse ring animation
+    ══════════════════════════════════════════════ */
+    .brand-badge {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0, 242, 255, 0.25);
+      border-radius: 999px;
+      padding: 0.3rem 0.95rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      margin-bottom: 1.35rem;
+      animation: fadeUp 0.5s ease both;
+    }
+    .brand-badge::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 242, 255, 0.2);
+      animation: badgePulse 2.4s ease-out infinite;
+    }
+    @keyframes badgePulse {
+      0%   { transform: scale(1);    opacity: 0.6; }
+      70%  { transform: scale(1.12); opacity: 0; }
+      100% { transform: scale(1.12); opacity: 0; }
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+      animation: pulse-dot 1.8s infinite;
+      flex-shrink: 0;
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: UPLOAD AREA — scan line on dragover
+    ══════════════════════════════════════════════ */
+    .upload-area {
+      position: relative;
+      overflow: hidden;  /* clip scan line */
+    }
+
+    /* Scanning line — only visible during drag */
+    .upload-area::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      top: -4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      animation: scanLine 1.4s linear infinite;
+      box-shadow: 0 0 10px var(--cyan);
+    }
+    .upload-area.drag-over::after { opacity: 1; }
+
+    @keyframes scanLine {
+      from { top: -4px; }
+      to   { top: 100%; }
+    }
+
+    /* Upload icon pulse on hover */
+    .upload-area:hover .upload-icon-wrap,
+    .upload-area.drag-over .upload-icon-wrap {
+      transform: scale(1.1);
+      box-shadow: var(--cyan-glow);
+      border-color: rgba(0, 242, 255, 0.5);
+    }
+    .upload-icon-wrap {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: FILE INFO CHIP
+    ══════════════════════════════════════════════ */
+    .file-info-chip {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(0, 242, 255, 0.06);
+      border: 1px solid rgba(0, 242, 255, 0.18);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.85rem;
+      margin-top: 0.75rem;
+      animation: fadeUp 0.25s ease both;
+    }
+    .file-info-chip.visible { display: flex; }
+
+    .file-chip-icon {
+      width: 28px; height: 28px;
+      background: var(--cyan-dim);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .file-chip-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.77rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-chip-meta {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+    .file-chip-type {
+      background: var(--cyan-dim);
+      color: var(--cyan);
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .file-chip-remove {
+      width: 20px; height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .file-chip-remove:hover {
+      background: var(--red-dim);
+      border-color: rgba(255,56,96,0.3);
+      color: var(--red);
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: IMAGE PREVIEW
+    ══════════════════════════════════════════════ */
+    .preview-wrap {
+      display: none;
+      position: relative;
+      margin-top: 0.75rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.3);
+      animation: fadeUp 0.3s ease both;
+    }
+    .preview-wrap.visible { display: block; }
+
+    #preview {
+      display: block;
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+    }
+
+    /* Scanning overlay on preview — visible while analysing */
+    .preview-scan-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .preview-scan-overlay.active { opacity: 1; }
+
+    .preview-scan-line {
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--cyan) 50%, transparent 100%);
+      box-shadow: 0 0 12px var(--cyan), 0 0 4px var(--cyan);
+      animation: previewScan 1.2s linear infinite;
+    }
+    .preview-scan-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,242,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,242,255,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .preview-corner {
+      position: absolute;
+      width: 14px; height: 14px;
+      border-color: var(--cyan);
+      border-style: solid;
+      opacity: 0.7;
+    }
+    .preview-corner.tl { top: 6px; left: 6px;  border-width: 2px 0 0 2px; }
+    .preview-corner.tr { top: 6px; right: 6px;  border-width: 2px 2px 0 0; }
+    .preview-corner.bl { bottom: 6px; left: 6px;  border-width: 0 0 2px 2px; }
+    .preview-corner.br { bottom: 6px; right: 6px;  border-width: 0 2px 2px 0; }
+
+    @keyframes previewScan {
+      from { top: 0; }
+      to   { top: 100%; }
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: FILE ERROR
+    ══════════════════════════════════════════════ */
+    #file-error {
+      display: none;
+      font-size: 0.78rem;
+      color: var(--red);
+      background: var(--red-dim);
+      border: 1px solid rgba(255,56,96,0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      margin-top: 0.5rem;
+      text-align: left;
+      animation: fadeUp 0.2s ease both;
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: SUBMIT BUTTON
+    ══════════════════════════════════════════════ */
+    .btn-primary {
+      margin-top: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Shimmer sweep on hover */
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.5s ease;
+    }
+    .btn-primary:not(:disabled):not(.loading):hover::after {
+      left: 160%;
+    }
+    .btn-primary .btn-text { transition: opacity 0.15s; }
+    .btn-primary.loading .btn-text { opacity: 0; }
+    .btn-primary.loading .spinner  { display: block !important; }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: RESULT BOX — slide-in card
+    ══════════════════════════════════════════════ */
+    .result-box {
+      margin-top: 1.25rem;
+      padding: 1.1rem 1.25rem;
+      border-radius: var(--radius-sm);
+      display: none;
+      text-align: left;
+      animation: resultSlideIn 0.45s cubic-bezier(0.22,1,0.36,1) both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes resultSlideIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    .result-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 4px 0 0 4px;
+    }
+    .result-box.real::before  { background: var(--green); box-shadow: 0 0 8px rgba(0,217,126,0.6); }
+    .result-box.fake::before  { background: var(--red);   box-shadow: 0 0 8px rgba(255,56,96,0.6); }
+    .result-box.uncertain::before { background: var(--yellow); }
+
+    .result-box.real      { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,217,126,0.25); padding-left: 1.5rem; }
+    .result-box.fake      { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(255,56,96,0.25);  padding-left: 1.5rem; }
+    .result-box.uncertain { background: rgba(255,208,96,0.08); color: var(--yellow); border: 1px solid rgba(255,208,96,0.25); padding-left: 1.5rem; }
+
+    .result-label {
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      margin-bottom: 0.3rem;
+    }
+    .result-verdict {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.2rem;
+    }
+    .result-conf {
+      font-size: 0.78rem;
+      font-weight: 400;
+      opacity: 0.75;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Result icon badge */
+    .result-icon {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .result-box.real  .result-icon { background: rgba(0,217,126,0.2); }
+    .result-box.fake  .result-icon { background: rgba(255,56,96,0.2); }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: ENSEMBLE BOX
+    ══════════════════════════════════════════════ */
+    .ensemble-box {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.9rem 1rem;
+      margin-top: 0.85rem;
+      text-align: left;
+      animation: fadeUp 0.4s ease 0.1s both;
+    }
+    .ensemble-title {
+      font-size: 0.66rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .ensemble-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.35rem 0;
+      font-size: 0.81rem;
+      gap: 0.5rem;
+    }
+    .ensemble-model {
+      color: var(--text-primary);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+    }
+    .ensemble-conf {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.78rem;
+    }
+    /* Mini bar per model */
+    .ensemble-bar-wrap { flex: 1; max-width: 80px; }
+    .ensemble-bar-track {
+      height: 3px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .ensemble-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.8s cubic-bezier(0.25,1,0.5,1);
+    }
+
+    /* ══════════════════════════════════════════════
+       REDESIGN: ANALYSIS LINK BUTTON
+    ══════════════════════════════════════════════ */
+    .analysis-cta {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.85rem;
+      animation: fadeUp 0.4s ease 0.2s both;
+    }
+    .analysis-cta a {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.6rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(0,242,255,0.3);
+      background: rgba(0,242,255,0.06);
+      color: var(--cyan);
+    }
+    .analysis-cta a:hover {
+      background: rgba(0,242,255,0.14);
+      box-shadow: var(--cyan-glow-sm);
+      transform: translateY(-1px);
+    }
+    .analysis-cta a.secondary {
+      border-color: var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+    }
+    .analysis-cta a.secondary:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      box-shadow: none;
+    }
+
+    /* ══════════════════════════════════════════════
+       SETTINGS PANEL STYLES
+    ══════════════════════════════════════════════ */
     .settings-grid {
       display: grid;
       grid-template-columns: 200px 1fr;
       gap: 1.5rem;
       align-items: start;
     }
-
-    .settings-nav {
-      position: sticky;
-      top: 115px;
-    }
-
+    .settings-nav { position: sticky; top: 115px; }
     .settings-nav-item {
       display: flex;
       align-items: center;
@@ -74,90 +518,78 @@
       transition: all var(--transition);
       border: 1px solid transparent;
     }
-
     .settings-nav-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
-
     .settings-nav-item.active {
       background: var(--cyan-dim);
       color: var(--cyan);
       border-color: rgba(0,242,255,0.2);
     }
-
     .settings-nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.7; flex-shrink: 0; }
-
     .settings-section { display: none; flex-direction: column; gap: 1.15rem; animation: fadeUp 0.3s ease both; }
     .settings-section.active { display: flex; }
-
     .settings-card { padding: 1.4rem; }
     .settings-card-title { font-size: 0.88rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.2rem; }
     .settings-card-sub { font-size: 0.76rem; color: var(--text-muted); padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.25rem; }
-
     .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--border-color); gap: 1.5rem; }
     .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
     .setting-info { flex: 1; }
     .setting-label { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
     .setting-desc { font-size: 0.74rem; color: var(--text-muted); line-height: 1.4; }
-
     .setting-toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
     .setting-toggle input { opacity: 0; width: 0; height: 0; }
-    .setting-toggle-slider {
-      position: absolute; inset: 0;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid var(--border-color);
-      border-radius: 999px; cursor: pointer; transition: all 0.3s;
-    }
-    .setting-toggle-slider::before {
-      content: ''; position: absolute;
-      width: 16px; height: 16px; left: 2px; top: 2px;
-      background: var(--text-muted); border-radius: 50%; transition: all 0.3s;
-    }
+    .setting-toggle-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); border-radius: 999px; cursor: pointer; transition: all 0.3s; }
+    .setting-toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--text-muted); border-radius: 50%; transition: all 0.3s; }
     .setting-toggle input:checked + .setting-toggle-slider { background: var(--cyan); border-color: var(--cyan); box-shadow: var(--cyan-glow-sm); }
     .setting-toggle input:checked + .setting-toggle-slider::before { transform: translateX(18px); background: #000; }
-
     .setting-range { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
     .setting-range input[type="range"] { -webkit-appearance: none; width: 110px; height: 4px; border-radius: 999px; background: rgba(255,255,255,0.1); outline: none; cursor: pointer; }
     .setting-range input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cyan); box-shadow: var(--cyan-glow-sm); cursor: pointer; }
     .range-val { font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; color: var(--cyan); min-width: 36px; text-align: right; }
-
-    .setting-select {
-      background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
-      color: var(--text-primary); font-size: 0.82rem; font-family: 'Inter', sans-serif;
-      padding: 0.38rem 0.7rem; outline: none; cursor: pointer; transition: border-color var(--transition); min-width: 130px;
-    }
+    .setting-select { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.82rem; font-family: 'Inter', sans-serif; padding: 0.38rem 0.7rem; outline: none; cursor: pointer; transition: border-color var(--transition); min-width: 130px; }
     .setting-select:focus { border-color: var(--cyan); box-shadow: var(--cyan-glow-sm); }
-
     .tag { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.4px; }
     .tag-cyan { background: var(--cyan-dim); color: var(--cyan); border: 1px solid rgba(0,242,255,0.2); }
     .tag-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,217,126,0.2); }
-
     .info-box { background: var(--cyan-dim); border: 1px solid rgba(0,242,255,0.15); border-radius: var(--radius-sm); padding: 0.8rem 1rem; font-size: 0.78rem; color: var(--text-secondary); display: flex; gap: 0.6rem; align-items: flex-start; }
     .info-box-icon { color: var(--cyan); flex-shrink: 0; margin-top: 1px; }
-
-    .btn-save { padding: 0.55rem 1.4rem; background: var(--cyan); color: #000; font-size: 0.85rem; font-weight: 700; border: none; border-radius: var(--radius-sm); transition: all var(--transition); }
+    .btn-save { padding: 0.55rem 1.4rem; background: var(--cyan); color: #000; font-size: 0.85rem; font-weight: 700; border: none; border-radius: var(--radius-sm); transition: all var(--transition); cursor: pointer; }
     .btn-save:hover { box-shadow: var(--cyan-glow); transform: translateY(-1px); }
     .btn-save:active { transform: scale(0.98); }
-
     .danger-card { border-color: rgba(255,56,96,0.25) !important; }
     .danger-card .settings-card-title { color: var(--red); }
-    .btn-danger { padding: 0.5rem 1rem; background: var(--red-dim); border: 1px solid rgba(255,56,96,0.35); border-radius: var(--radius-sm); color: var(--red); font-size: 0.82rem; font-weight: 600; transition: all var(--transition); flex-shrink: 0; }
+    .btn-danger { padding: 0.5rem 1rem; background: var(--red-dim); border: 1px solid rgba(255,56,96,0.35); border-radius: var(--radius-sm); color: var(--red); font-size: 0.82rem; font-weight: 600; transition: all var(--transition); flex-shrink: 0; cursor: pointer; }
     .btn-danger:hover { background: rgba(255,56,96,0.25); }
-
     .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
     .about-item { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; }
     .about-item-label { font-size: 0.66rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.25rem; }
     .about-item-value { font-size: 0.84rem; font-weight: 600; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
 
-    /* Toast */
-    .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #151B27; border: 1px solid rgba(0,242,255,0.25); border-radius: var(--radius-sm); padding: 0.75rem 1.25rem; font-size: 0.82rem; color: var(--cyan); display: flex; align-items: center; gap: 0.5rem; box-shadow: var(--cyan-glow-sm); transform: translateY(80px); opacity: 0; transition: all 0.3s ease; z-index: 999; }
+    /* ══════════════════════════════════════════════
+       TOAST
+    ══════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: #151B27;
+      border: 1px solid rgba(0,242,255,0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.82rem;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: var(--cyan-glow-sm);
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+      z-index: 9999;
+    }
     .toast.show { transform: translateY(0); opacity: 1; }
 
-    /* Ensemble Breakdown */
-    .ensemble-box { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem; text-align: left;}
-    .ensemble-title { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 0.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.4rem; }
-    .ensemble-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; font-size: 0.82rem; }
-    .ensemble-model { color: var(--text-primary); font-weight: 500; display: flex; align-items: center; gap: 0.5rem; }
-    .ensemble-conf { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-    
+    /* ══════════════════════════════════════════════
+       RESPONSIVE
+    ══════════════════════════════════════════════ */
     @media (max-width: 780px) {
       .settings-grid { grid-template-columns: 1fr; }
       .settings-nav { position: static; display: flex; flex-wrap: wrap; gap: 0.4rem; }
@@ -167,13 +599,25 @@
 </head>
 <body>
 
+<div class="mobile-overlay" id="mobile-overlay"></div>
+
 <div class="app-layout">
 
-  <!-- ── Sidebar ─────────────────────────────────── -->
-  <aside class="sidebar">
+  <!-- ══════════════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">DeepGuard AI</div>
-      <div class="logo-sub">Synthetic Media Detection</div>
+      <!-- REDESIGN: Shield icon before logo text -->
+      <div style="display:flex;align-items:center;gap:0.55rem;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;filter:drop-shadow(0 0 4px rgba(0,242,255,0.5));">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div>
+          <div class="logo-text">DeepGuard AI</div>
+          <div class="logo-sub">Synthetic Media Detection</div>
+        </div>
+      </div>
       <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar">&#10094;</button>
     </div>
 
@@ -203,7 +647,6 @@
         <span>Analytics</span>
       </a>
 
-      <!-- Settings now links to /?tab=settings on this same page -->
       <a href="/?tab=settings" class="nav-link" id="nav-settings">
         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.41 13.45M4.93 4.93a10 10 0 0 0-1.41 13.45M12 2v2M12 20v2M2 12H4M20 12h2"/>
@@ -212,20 +655,46 @@
       </a>
     </nav>
 
+    <div class="quick-actions">
+      <div class="quick-actions-label">Quick Actions</div>
+      <a href="/" class="quick-btn cyan" title="New Scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="quick-btn-label">Quick Scan</span>
+      </a>
+      <a href="/dashboard" class="quick-btn" title="View History">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span class="quick-btn-label">View Reports</span>
+      </a>
+      <a href="/analytics" class="quick-btn green" title="Analytics">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        <span class="quick-btn-label">Statistics</span>
+      </a>
+      <button class="quick-btn red" title="Clear History"
+        onclick="confirmDanger('clear-history','Clear All History?','All scan records will be permanently deleted from the database.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>
+        </svg>
+        <span class="quick-btn-label">Clear History</span>
+      </button>
+    </div>
+
     <div class="sidebar-footer">
-      <!-- Engine status -->
       <div class="sidebar-engine-status">
         <span class="status-dot"></span>
         <span>AI Engine Online</span>
       </div>
 
-      <!-- Model performance panel -->
       {% if engine_models %}
       <div class="sidebar-model-panel">
         <div class="sidebar-panel-label">Ensemble Models</div>
 
         {% if details %}
-          {# Find the best model: highest confidence score #}
           {% set best_model = namespace(name='', conf=0) %}
           {% for mname, mdata in details.items() %}
             {% if mdata['confidence'] > best_model.conf %}
@@ -245,13 +714,13 @@
                     {% if is_best %}<span class="best-crown" title="Best model this scan">&#9733;</span>{% endif %}
                     {{ mname }}
                   </span>
-                  <span class="sidebar-model-conf" style="color: {% if is_real %}var(--green){% else %}var(--red){% endif %};">
+                  <span class="sidebar-model-conf" style="color:{% if is_real %}var(--green){% else %}var(--red){% endif %};">
                     {{ mdata['confidence'] }}%
                   </span>
                 </div>
                 <div class="sidebar-mini-bar">
                   <div class="sidebar-mini-fill {% if is_real %}real{% else %}fake{% endif %}"
-                       style="width: {{ mdata['confidence'] }}%;"></div>
+                       style="width:{{ mdata['confidence'] }}%;"></div>
                 </div>
               </div>
             {% else %}
@@ -267,14 +736,12 @@
             {% endif %}
           {% endfor %}
 
-          <!-- Best model summary -->
           <div class="sidebar-best-row">
             <span class="sidebar-best-label">&#9733; Best</span>
             <span class="sidebar-best-value">{{ best_model.name }} &bull; {{ best_model.conf }}%</span>
           </div>
 
         {% else %}
-          {# No scan yet — show model names as idle #}
           {% for mname in engine_models %}
           <div class="sidebar-model-row">
             <div class="sidebar-model-header">
@@ -292,16 +759,19 @@
     </div>
   </aside>
 
-  <!-- ── Main ───────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════════════════ -->
   <div class="main-content">
 
-    <!-- Topbar -->
     <header class="topbar">
-      <div>
-        <div class="topbar-title" id="topbar-title">New Analysis</div>
-        <div class="topbar-subtitle" id="topbar-subtitle">Upload media to scan for synthetic content</div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <button class="hamburger-btn" id="hamburger-btn" title="Open menu" aria-label="Open sidebar">&#9776;</button>
+        <div>
+          <div class="topbar-title" id="topbar-title">New Analysis</div>
+          <div class="topbar-subtitle" id="topbar-subtitle">Upload media to scan for synthetic content</div>
+        </div>
       </div>
-      <!-- Right side: search on Scan tab, Save button on Settings tab -->
       <div id="topbar-scan-right">
         <div class="search-bar">
           <span class="search-icon">⌕</span>
@@ -313,7 +783,7 @@
       </div>
     </header>
 
-    <!-- ── Tab Bar ── -->
+    <!-- Tab Bar -->
     <div class="tab-bar">
       <button class="tab-btn active" id="tab-scan-btn" onclick="switchMainTab('scan')">
         <span class="tab-icon">&#128444;</span> New Scan
@@ -323,105 +793,142 @@
       </button>
     </div>
 
-    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━ TAB: SCAN ━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- ══════════════════════════════════════════════
+         TAB: SCAN
+    ══════════════════════════════════════════════ -->
     <div class="tab-panel active" id="panel-scan">
       <div class="home-layout">
         <div class="glass-card upload-card">
 
+          <!-- REDESIGN: animated pulse badge -->
           <div class="brand-badge">
-            <span>&#9670;</span> AI-Powered Detection
+            <span class="badge-dot"></span>
+            AI-Powered Detection
           </div>
 
           <h1 class="home-title">Detect <span>Deepfakes</span><br>Instantly</h1>
-          <p class="home-subtitle">Upload any image. Our neural model analyzes facial geometry, texture consistency, and artifact patterns in seconds.</p>
+          <p class="home-subtitle">Upload any image. Our neural ensemble analyzes facial geometry, texture consistency, and artifact patterns in seconds.</p>
 
-          <!-- Flash messages -->
           {% with messages = get_flashed_messages() %}
             {% if messages %}
-              <div class="flash-msg">
-                {% for msg in messages %}{{ msg }}{% endfor %}
-              </div>
+              <div class="flash-msg">{% for msg in messages %}{{ msg }}{% endfor %}</div>
             {% endif %}
           {% endwith %}
 
           <form method="POST" enctype="multipart/form-data" action="{{ url_for('index') }}" id="detect-form">
+
+            <!-- Upload zone -->
             <div class="upload-area" id="upload-area">
               <input type="file" name="image" id="image"
                 accept="image/png, image/jpeg, image/webp"
                 required
                 aria-label="Upload an image to analyse" />
-              <div class="upload-icon-wrap">&#128444;</div>
-              <span class="upload-label">Drop image here or click to browse</span>
+              <div class="upload-icon-wrap" id="upload-icon">&#128444;</div>
+              <span class="upload-label" id="upload-label">Drop image here or click to browse</span>
               <span class="upload-hint">PNG, JPG or WEBP &middot; Max 10 MB</span>
             </div>
 
-            <img id="preview" alt="Image preview" />
-            <p id="file-name"></p>
-            <p id="file-error"></p>
+            <!-- REDESIGN: file info chip (replaces plain text) -->
+            <div class="file-info-chip" id="file-chip">
+              <div class="file-chip-icon">&#128247;</div>
+              <span class="file-chip-name" id="file-chip-name">—</span>
+              <div class="file-chip-meta">
+                <span class="file-chip-type" id="file-chip-type">—</span>
+                <span id="file-chip-size">—</span>
+              </div>
+              <button type="button" class="file-chip-remove" id="file-chip-remove" title="Remove file">&#10005;</button>
+            </div>
 
+            <!-- Error message -->
+            <div id="file-error"></div>
+
+            <!-- REDESIGN: preview with scan overlay -->
+            <div class="preview-wrap" id="preview-wrap">
+              <img id="preview" alt="Image preview" />
+              <div class="preview-scan-overlay" id="preview-scan-overlay">
+                <div class="preview-scan-grid"></div>
+                <div class="preview-scan-line"></div>
+                <div class="preview-corner tl"></div>
+                <div class="preview-corner tr"></div>
+                <div class="preview-corner bl"></div>
+                <div class="preview-corner br"></div>
+              </div>
+            </div>
+
+            <!-- REDESIGN: button with shimmer + spinner -->
             <button type="submit" class="btn-primary" id="submit-btn">
-              <span class="spinner" id="spinner"></span>
-              <span id="btn-label">Analyze Image</span>
+              <div class="spinner" id="spinner"></div>
+              <span class="btn-text" id="btn-label">&#9658; Analyze Image</span>
             </button>
           </form>
 
+          <!-- ── RESULT ── -->
           {% if result %}
           <div class="result-box
             {% if 'real' in result.lower() %}real
             {% elif 'fake' in result.lower() or 'deepfake' in result.lower() %}fake
             {% else %}uncertain{% endif %}"
             id="result-box"
+            style="display:block;"
           >
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem; opacity: 0.8;">Ensemble Aggregate</div>
-            <div>
-              {% if 'real' in result.lower() %}&#10003; {% elif 'fake' in result.lower() %}&#9888; {% endif %}
+            <div class="result-label">Ensemble Verdict</div>
+            <div class="result-verdict">
+              <span class="result-icon">
+                {% if 'real' in result.lower() %}&#10003;{% elif 'fake' in result.lower() %}&#9888;{% else %}&#8764;{% endif %}
+              </span>
               {{ result }}
             </div>
             {% if confidence %}
               <div class="result-conf">{{ confidence }}% overall certainty</div>
             {% endif %}
           </div>
-          
+
           {% if details %}
           <div class="ensemble-box">
-            <div class="ensemble-title">Model Breakdown</div>
+            <div class="ensemble-title">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="var(--cyan)"><circle cx="5" cy="5" r="5"/></svg>
+              Model Breakdown
+            </div>
             {% for model_name, model_data in details.items() %}
+            {% set is_real_vote = 'real' in model_data['label'].lower() %}
             <div class="ensemble-row">
               <span class="ensemble-model">
-                <span class="status-dot" style="background: {% if 'real' in model_data['label'].lower() %}var(--green){% else %}var(--red){% endif %};"></span>
+                <span class="status-dot" style="background:{% if is_real_vote %}var(--green){% else %}var(--red){% endif %};width:6px;height:6px;animation:none;box-shadow:none;"></span>
                 {{ model_name }}
               </span>
-              <span class="ensemble-conf" style="color: {% if 'real' in model_data['label'].lower() %}var(--green){% else %}var(--red){% endif %};">
-                {{ model_data['confidence'] }}% {% if 'real' in model_data['label'].lower() %}Real{% else %}Fake{% endif %}
+              <div class="ensemble-bar-wrap">
+                <div class="ensemble-bar-track">
+                  <div class="ensemble-bar-fill {% if is_real_vote %}real{% else %}fake{% endif %}"
+                       style="width:{{ model_data['confidence'] }}%;background:{% if is_real_vote %}var(--green){% else %}var(--red){% endif %};"></div>
+                </div>
+              </div>
+              <span class="ensemble-conf" style="color:{% if is_real_vote %}var(--green){% else %}var(--red){% endif %};">
+                {{ model_data['confidence'] }}%
               </span>
             </div>
             {% endfor %}
           </div>
           {% endif %}
-          
+
+          {% if new_record_id %}
+          <div class="analysis-cta">
+            <a href="/analysis/{{ new_record_id }}">&#128065; View Full Analysis</a>
+            <a href="/dashboard" class="secondary">&#128202; History</a>
+          </div>
+          {% endif %}
           {% endif %}
 
-
-          <div style="display: flex; gap: 10px; margin-top: 10px;">
-            {% if new_record_id %}
-            <a class="dashboard-link" href="/analysis/{{ new_record_id }}" style="flex: 1; border-color: rgba(0, 242, 255, 0.5); color: var(--cyan); background: rgba(0, 242, 255, 0.05);">
-              &#128065; Analysis View
-            </a>
-            {% endif %}
-            <a class="dashboard-link" href="/dashboard" style="flex: 1;">
-              &#9635; Detection History
-            </a>
-          </div>
-        </div>
-      </div>
+        </div><!-- /upload-card -->
+      </div><!-- /home-layout -->
     </div><!-- /panel-scan -->
 
-    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━ TAB: SETTINGS ━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- ══════════════════════════════════════════════
+         TAB: SETTINGS
+    ══════════════════════════════════════════════ -->
     <div class="tab-panel" id="panel-settings">
       <div class="page-area">
         <div class="settings-grid">
 
-          <!-- Left nav -->
           <div class="glass-card settings-nav" style="padding:0.5rem;">
             <div class="settings-nav-item active" onclick="switchSettingsTab(this,'stab-model')">
               <span class="settings-nav-dot"></span> Model
@@ -437,69 +944,39 @@
             </div>
           </div>
 
-          <!-- Right content -->
           <div>
-
             <!-- Model -->
             <div class="settings-section active" id="stab-model">
               <div class="glass-card settings-card">
                 <div class="settings-card-title">Detection Model</div>
                 <div class="settings-card-sub">Configure the AI engine used for analysis</div>
-
                 <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Active Model</div>
-                    <div class="setting-desc">Neural network architecture currently powering detections</div>
-                  </div>
-                  <span class="tag tag-cyan">Ensemble Aggregate / MobileNetV2 / ResNet50V2 / Xception</span>
+                  <div class="setting-info"><div class="setting-label">Active Model</div><div class="setting-desc">Neural network architecture currently powering detections</div></div>
+                  <span class="tag tag-cyan">Ensemble / MobileNetV2 / ResNet50V2 / Xception</span>
                 </div>
-
                 <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Confidence Threshold</div>
-                    <div class="setting-desc">Minimum score to classify as Deepfake. Higher = more strict.</div>
-                  </div>
+                  <div class="setting-info"><div class="setting-label">Confidence Threshold</div><div class="setting-desc">Minimum score to classify as Deepfake. Higher = more strict.</div></div>
                   <div class="setting-range">
-                    <input type="range" id="conf-threshold" min="40" max="95" value="50"
-                      oninput="document.getElementById('conf-val').textContent=this.value+'%'" />
+                    <input type="range" id="conf-threshold" min="40" max="95" value="50" oninput="document.getElementById('conf-val').textContent=this.value+'%'" />
                     <span class="range-val" id="conf-val">50%</span>
                   </div>
                 </div>
-
                 <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Input Resolution</div>
-                    <div class="setting-desc">Image resize dimension fed into the model (fixed by architecture)</div>
-                  </div>
+                  <div class="setting-info"><div class="setting-label">Input Resolution</div><div class="setting-desc">Image resize dimension fed into the model (fixed by architecture)</div></div>
                   <span class="tag tag-cyan">224 &times; 224 px</span>
                 </div>
-
                 <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Data Augmentation</div>
-                    <div class="setting-desc">Enable augmentation for improved robustness during training</div>
-                  </div>
-                  <label class="setting-toggle">
-                    <input type="checkbox" id="aug-toggle" checked />
-                    <span class="setting-toggle-slider"></span>
-                  </label>
+                  <div class="setting-info"><div class="setting-label">Data Augmentation</div><div class="setting-desc">Enable augmentation for improved robustness during training</div></div>
+                  <label class="setting-toggle"><input type="checkbox" id="aug-toggle" checked /><span class="setting-toggle-slider"></span></label>
                 </div>
-
                 <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Fine-Tuning Mode</div>
-                    <div class="setting-desc">Unfreeze base model layers for retraining (requires GPU)</div>
-                  </div>
-                  <label class="setting-toggle">
-                    <input type="checkbox" id="finetune-toggle" />
-                    <span class="setting-toggle-slider"></span>
-                  </label>
+                  <div class="setting-info"><div class="setting-label">Fine-Tuning Mode</div><div class="setting-desc">Unfreeze base model layers for retraining (requires GPU)</div></div>
+                  <label class="setting-toggle"><input type="checkbox" id="finetune-toggle" /><span class="setting-toggle-slider"></span></label>
                 </div>
               </div>
-
               <div class="info-box">
                 <span class="info-box-icon">&#9432;</span>
-                <span>Models are stored in <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">dataset/model/</code>. Retrain the ensemble with <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">python train_ensemble.py</code>.</span>
+                <span>Models are stored in <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">dataset/model/</code>. Retrain with <code style="font-family:'JetBrains Mono',monospace;font-size:0.77rem;color:var(--cyan);">python train_ensemble.py</code>.</span>
               </div>
             </div>
 
@@ -508,52 +985,10 @@
               <div class="glass-card settings-card">
                 <div class="settings-card-title">Interface Preferences</div>
                 <div class="settings-card-sub">Customize how the dashboard looks and behaves</div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Visual Overlay by Default</div>
-                    <div class="setting-desc">Auto-enable the visual overlay when opening analysis results</div>
-                  </div>
-                  <label class="setting-toggle">
-                    <input type="checkbox" id="heatmap-default" checked />
-                    <span class="setting-toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Sidebar Default State</div>
-                    <div class="setting-desc">Start expanded or collapsed on page load</div>
-                  </div>
-                  <select class="setting-select" id="sidebar-default">
-                    <option value="expanded">Expanded</option>
-                    <option value="collapsed">Collapsed</option>
-                  </select>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Table Rows Per Page</div>
-                    <div class="setting-desc">Number of detections shown in the history table</div>
-                  </div>
-                  <select class="setting-select" id="rows-per-page">
-                    <option value="10">10 rows</option>
-                    <option value="25" selected>25 rows</option>
-                    <option value="50">50 rows</option>
-                    <option value="all">All</option>
-                  </select>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">UI Animations</div>
-                    <div class="setting-desc">Enable fade-in, slide-up and pulse animations</div>
-                  </div>
-                  <label class="setting-toggle">
-                    <input type="checkbox" id="animations-toggle" checked />
-                    <span class="setting-toggle-slider"></span>
-                  </label>
-                </div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Visual Overlay by Default</div><div class="setting-desc">Auto-enable the visual overlay when opening analysis results</div></div><label class="setting-toggle"><input type="checkbox" id="heatmap-default" checked /><span class="setting-toggle-slider"></span></label></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Sidebar Default State</div><div class="setting-desc">Start expanded or collapsed on page load</div></div><select class="setting-select" id="sidebar-default"><option value="expanded">Expanded</option><option value="collapsed">Collapsed</option></select></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Table Rows Per Page</div><div class="setting-desc">Number of detections shown in the history table</div></div><select class="setting-select" id="rows-per-page"><option value="10">10 rows</option><option value="25" selected>25 rows</option><option value="50">50 rows</option><option value="all">All</option></select></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">UI Animations</div><div class="setting-desc">Enable fade-in, slide-up and pulse animations</div></div><label class="setting-toggle"><input type="checkbox" id="animations-toggle" checked /><span class="setting-toggle-slider"></span></label></div>
               </div>
             </div>
 
@@ -562,62 +997,16 @@
               <div class="glass-card settings-card">
                 <div class="settings-card-title">Storage &amp; Data</div>
                 <div class="settings-card-sub">Manage scan records and uploaded files</div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Total Scan Records</div>
-                    <div class="setting-desc">Detections stored in the database</div>
-                  </div>
-                  <span class="tag tag-green">{{ record_count }} records</span>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Database File</div>
-                    <div class="setting-desc">SQLite database location</div>
-                  </div>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);">history.db</span>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Auto-Delete Uploads</div>
-                    <div class="setting-desc">Remove image files automatically after analysis</div>
-                  </div>
-                  <label class="setting-toggle">
-                    <input type="checkbox" id="auto-delete-toggle" />
-                    <span class="setting-toggle-slider"></span>
-                  </label>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Max Upload Size</div>
-                    <div class="setting-desc">Maximum allowed file size per scan</div>
-                  </div>
-                  <span class="tag tag-cyan">10 MB</span>
-                </div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Total Scan Records</div><div class="setting-desc">Detections stored in the database</div></div><span class="tag tag-green">{{ record_count }} records</span></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Database File</div><div class="setting-desc">SQLite database location</div></div><span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--text-muted);">history.db</span></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Auto-Delete Uploads</div><div class="setting-desc">Remove image files automatically after analysis</div></div><label class="setting-toggle"><input type="checkbox" id="auto-delete-toggle" /><span class="setting-toggle-slider"></span></label></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Max Upload Size</div><div class="setting-desc">Maximum allowed file size per scan</div></div><span class="tag tag-cyan">10 MB</span></div>
               </div>
-
               <div class="glass-card settings-card danger-card">
                 <div class="settings-card-title">&#9888; Danger Zone</div>
                 <div class="settings-card-sub">These actions are permanent and cannot be undone</div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Clear All History</div>
-                    <div class="setting-desc">Permanently delete all records from the database</div>
-                  </div>
-                  <button class="btn-danger" onclick="confirmDanger('clear-history','Clear All History?','All scan records will be permanently deleted from the database.')">Clear All</button>
-                </div>
-
-                <div class="setting-row">
-                  <div class="setting-info">
-                    <div class="setting-label">Delete All Uploads</div>
-                    <div class="setting-desc">Remove all images in the uploads folder</div>
-                  </div>
-                  <button class="btn-danger" onclick="confirmDanger('clear-uploads','Delete All Uploads?','All image files in the uploads folder will be permanently removed.')">Delete Files</button>
-                </div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Clear All History</div><div class="setting-desc">Permanently delete all records from the database</div></div><button class="btn-danger" onclick="confirmDanger('clear-history','Clear All History?','All scan records will be permanently deleted from the database.')">Clear All</button></div>
+                <div class="setting-row"><div class="setting-info"><div class="setting-label">Delete All Uploads</div><div class="setting-desc">Remove all images in the uploads folder</div></div><button class="btn-danger" onclick="confirmDanger('clear-uploads','Delete All Uploads?','All image files in the uploads folder will be permanently removed.')">Delete Files</button></div>
               </div>
             </div>
 
@@ -661,7 +1050,7 @@
 </div><!-- /app-layout -->
 
 <!-- Toast -->
-<div class="toast" id="save-toast">&#10003; Settings saved</div>
+<div class="toast" id="save-toast">&#10003; Done</div>
 
 <!-- Danger modal -->
 <div class="modal-overlay" id="danger-modal">
@@ -678,91 +1067,243 @@
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
-  /* ── Main tab switcher ── */
-  var topbarTitles = {
-    scan:     { title: 'New Analysis',  sub: 'Upload media to scan for synthetic content' },
-    settings: { title: 'Settings',      sub: 'Manage model, display, and system preferences' }
-  };
+/* ══════════════════════════════════════════════
+   FILE HANDLING — preview, chip, validation
+══════════════════════════════════════════════ */
+(function () {
+  const input        = document.getElementById('image');
+  const uploadArea   = document.getElementById('upload-area');
+  const previewWrap  = document.getElementById('preview-wrap');
+  const preview      = document.getElementById('preview');
+  const fileChip     = document.getElementById('file-chip');
+  const chipName     = document.getElementById('file-chip-name');
+  const chipType     = document.getElementById('file-chip-type');
+  const chipSize     = document.getElementById('file-chip-size');
+  const chipRemove   = document.getElementById('file-chip-remove');
+  const fileError    = document.getElementById('file-error');
+  const uploadLabel  = document.getElementById('upload-label');
+  const MAX_MB       = 10;
+  const ALLOWED      = ['image/png','image/jpeg','image/webp'];
 
-  function switchMainTab(tab) {
-    // Panels
-    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    document.getElementById('panel-' + tab).classList.add('active');
+  if (!input) return;
 
-    // Tab buttons
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.getElementById('tab-' + tab + '-btn').classList.add('active');
-
-    // Topbar text + right-side controls
-    document.getElementById('topbar-title').textContent    = topbarTitles[tab].title;
-    document.getElementById('topbar-subtitle').textContent = topbarTitles[tab].sub;
-    document.getElementById('topbar-scan-right').style.display     = tab === 'scan'     ? '' : 'none';
-    document.getElementById('topbar-settings-right').style.display = tab === 'settings' ? '' : 'none';
-
-    // Sidebar active state
-    document.getElementById('nav-home').classList.toggle('active', tab === 'scan');
-    document.getElementById('nav-settings').classList.toggle('active', tab === 'settings');
-
-    // Update URL without reload
-    var url = tab === 'scan' ? '/' : '/?tab=settings';
-    history.replaceState(null, '', url);
+  function showError(msg) {
+    fileError.textContent   = msg;
+    fileError.style.display = 'block';
   }
 
-  /* ── Settings inner tabs ── */
-  function switchSettingsTab(el, tabId) {
-    document.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
-    document.querySelectorAll('.settings-section').forEach(function(s) { s.classList.remove('active'); });
-    el.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
+  function clearError() {
+    fileError.textContent   = '';
+    fileError.style.display = 'none';
   }
 
-  /* ── Auto-activate tab from URL param ── */
-  (function () {
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('tab') === 'settings') {
-      switchMainTab('settings');
+  function resetFile() {
+    input.value       = '';
+    previewWrap.classList.remove('visible');
+    fileChip.classList.remove('visible');
+    preview.src       = '';
+    uploadLabel.textContent = 'Drop image here or click to browse';
+    clearError();
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    clearError();
+
+    if (!ALLOWED.includes(file.type)) {
+      showError('Unsupported file type. Please upload PNG, JPG, or WEBP.');
+      resetFile();
+      return;
     }
-  })();
 
-  /* ── Topbar search ── */
-  var searchEl = document.getElementById('topbar-search');
-  if (searchEl) {
-    searchEl.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && this.value.trim()) {
-        window.location.href = '/dashboard?q=' + encodeURIComponent(this.value.trim());
+    if (file.size > MAX_MB * 1024 * 1024) {
+      showError('File too large (' + (file.size / 1024 / 1024).toFixed(1) + ' MB). Max: ' + MAX_MB + ' MB.');
+      resetFile();
+      return;
+    }
+
+    /* File info chip */
+    const ext = file.name.split('.').pop().toUpperCase();
+    chipName.textContent  = file.name;
+    chipType.textContent  = ext;
+    chipSize.textContent  = file.size > 1024 * 1024
+      ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+    fileChip.classList.add('visible');
+
+    /* Preview */
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      preview.src = e.target.result;
+      previewWrap.classList.add('visible');
+    };
+    reader.readAsDataURL(file);
+
+    uploadLabel.textContent = '✓ Ready to scan';
+  }
+
+  input.addEventListener('change', function () { loadFile(this.files[0]); });
+
+  /* Remove file chip × button */
+  chipRemove.addEventListener('click', function () { resetFile(); });
+
+  /* Drag and drop */
+  document.addEventListener('dragover', function (e) { e.preventDefault(); });
+  document.addEventListener('drop',     function (e) { e.preventDefault(); });
+
+  uploadArea.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+  });
+
+  uploadArea.addEventListener('dragleave', function (e) {
+    if (!uploadArea.contains(e.relatedTarget)) {
+      uploadArea.classList.remove('drag-over');
+    }
+  });
+
+  uploadArea.addEventListener('drop', function (e) {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    try {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+    } catch (_) {}
+    loadFile(file);
+  });
+
+  /* Form submit — scan overlay + loading state */
+  const form      = document.getElementById('detect-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const scanOverlay = document.getElementById('preview-scan-overlay');
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      if (fileError.style.display === 'block') { e.preventDefault(); return; }
+      if (!input.files || input.files.length === 0) {
+        e.preventDefault();
+        showError('Please select an image before scanning.');
+        return;
       }
+      /* Activate scan overlay on preview */
+      if (scanOverlay) scanOverlay.classList.add('active');
+      /* CSS loading class (hides btn-text, shows spinner) */
+      if (submitBtn) submitBtn.classList.add('loading');
     });
   }
 
-  /* ── Save toast ── */
-  function saveSettings() {
-    var t = document.getElementById('save-toast');
-    t.classList.add('show');
-    setTimeout(function() { t.classList.remove('show'); }, 2500);
-  }
-
-  /* ── Danger modal ── */
-  var dangerEndpoint = null;
-
-  function confirmDanger(endpoint, title, text) {
-    dangerEndpoint = endpoint;
-    document.getElementById('danger-title').textContent = title;
-    document.getElementById('danger-text').textContent  = text;
-    document.getElementById('danger-modal').classList.add('show');
-  }
-
-  document.getElementById('danger-confirm-btn').addEventListener('click', function () {
-    if (!dangerEndpoint) return;
-    fetch('/' + dangerEndpoint, { method: 'POST' }).then(function() {
-      document.getElementById('danger-modal').classList.remove('show');
-      saveSettings();
-      dangerEndpoint = null;
-    });
+  /* bfcache: re-enable button on back navigation */
+  window.addEventListener('pageshow', function (e) {
+    if (e.persisted) {
+      if (submitBtn)    submitBtn.classList.remove('loading');
+      if (scanOverlay)  scanOverlay.classList.remove('active');
+    }
   });
 
-  document.getElementById('danger-modal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('show');
+  /* Auto-scroll to result if present */
+  const resultBox = document.getElementById('result-box');
+  if (resultBox && resultBox.textContent.trim().length > 0) {
+    setTimeout(function () {
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 350);
+  }
+})();
+
+/* ══════════════════════════════════════════════
+   MAIN TAB SWITCHER
+══════════════════════════════════════════════ */
+var topbarTitles = {
+  scan:     { title: 'New Analysis',  sub: 'Upload media to scan for synthetic content' },
+  settings: { title: 'Settings',      sub: 'Manage model, display, and system preferences' }
+};
+
+function switchMainTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('panel-' + tab).classList.add('active');
+
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('tab-' + tab + '-btn').classList.add('active');
+
+  document.getElementById('topbar-title').textContent    = topbarTitles[tab].title;
+  document.getElementById('topbar-subtitle').textContent = topbarTitles[tab].sub;
+  document.getElementById('topbar-scan-right').style.display     = tab === 'scan'     ? '' : 'none';
+  document.getElementById('topbar-settings-right').style.display = tab === 'settings' ? '' : 'none';
+
+  document.getElementById('nav-home').classList.toggle('active', tab === 'scan');
+  document.getElementById('nav-settings').classList.toggle('active', tab === 'settings');
+
+  history.replaceState(null, '', tab === 'scan' ? '/' : '/?tab=settings');
+}
+
+/* ══════════════════════════════════════════════
+   SETTINGS INNER TABS
+══════════════════════════════════════════════ */
+function switchSettingsTab(el, tabId) {
+  document.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
+  document.querySelectorAll('.settings-section').forEach(function(s) { s.classList.remove('active'); });
+  el.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+/* Auto-activate tab from URL */
+(function () {
+  if (new URLSearchParams(window.location.search).get('tab') === 'settings') {
+    switchMainTab('settings');
+  }
+})();
+
+/* ══════════════════════════════════════════════
+   TOPBAR SEARCH
+══════════════════════════════════════════════ */
+var searchEl = document.getElementById('topbar-search');
+if (searchEl) {
+  searchEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && this.value.trim()) {
+      window.location.href = '/dashboard?q=' + encodeURIComponent(this.value.trim());
+    }
   });
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+function showToast(msg) {
+  var t = document.getElementById('save-toast');
+  t.textContent = msg || '✓ Done';
+  t.classList.add('show');
+  setTimeout(function () { t.classList.remove('show'); }, 2500);
+}
+
+function saveSettings() { showToast('✓ Settings saved'); }
+
+/* ══════════════════════════════════════════════
+   DANGER MODAL
+══════════════════════════════════════════════ */
+var dangerEndpoint = null;
+
+function confirmDanger(endpoint, title, text) {
+  dangerEndpoint = endpoint;
+  document.getElementById('danger-title').textContent = title;
+  document.getElementById('danger-text').textContent  = text;
+  document.getElementById('danger-modal').classList.add('show');
+}
+
+document.getElementById('danger-confirm-btn').addEventListener('click', function () {
+  if (!dangerEndpoint) return;
+  var ep = dangerEndpoint;
+  dangerEndpoint = null;
+  document.getElementById('danger-modal').classList.remove('show');
+  fetch('/' + ep, { method: 'POST' })
+    .then(function () { showToast('✓ Done'); setTimeout(function () { window.location.reload(); }, 800); })
+    .catch(function () { showToast('✗ Action failed'); });
+});
+
+document.getElementById('danger-modal').addEventListener('click', function (e) {
+  if (e.target === this) this.classList.remove('show');
+});
 </script>
 </body>
 </html>

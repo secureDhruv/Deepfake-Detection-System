@@ -29,6 +29,7 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, "dataset", "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
+app.config["TEMPLATES_AUTO_RELOAD"] = True  # always pick up fresh HTML/CSS
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
 
@@ -273,4 +274,4 @@ def test_ui():
     return render_template("index.html", result="Fake Image", confidence=82.5, details=details, record_count=42, active_tab="scan")
 
 if __name__ == "__main__":
-    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")
+    app.run(host="0.0.0.0", debug=True)  # auto-restarts on any .py change
