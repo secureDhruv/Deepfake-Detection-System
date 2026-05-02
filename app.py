@@ -356,7 +356,7 @@ def test_ui():
     return render_template("index.html", result="Fake Image", confidence=82.5, details=details, record_count=42, active_tab="scan")
 
 if __name__ == "__main__":
-    debug_enabled = os.environ.get("FLASK_DEBUG") == "1"
-    host = os.environ.get("FLASK_HOST", "127.0.0.1")
+    debug_enabled = os.environ.get("FLASK_DEBUG", "0" if IS_PRODUCTION else "1") == "1"
+    host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "5000"))
     app.run(host=host, port=port, debug=debug_enabled)
