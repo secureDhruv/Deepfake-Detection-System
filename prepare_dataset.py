@@ -1,9 +1,13 @@
 """
 Prepare a binary image dataset for the deepfake detector.
 
-Expected source layout by default:
-    <source>/ai_images
-    <source>/real
+Expected source layout (most Kaggle datasets use this):
+    <source>/fake      <- AI/deepfake images
+    <source>/real      <- genuine images
+
+If your dataset uses different folder names, pass:
+    --fake-subdir <name>   (e.g. ai_images, FAKE, synthetic)
+    --real-subdir <name>   (e.g. real, REAL, genuine)
 
 The script creates disjoint train/validation splits under:
     dataset/train/fake
@@ -19,10 +23,9 @@ import shutil
 import sys
 
 SUPPORTED_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
-DEFAULT_SOURCE = os.environ.get(
-    "DEEPFAKE_DATASET_SRC",
-    r"C:\Users\dhruv\Downloads\archive (1)\my_real_vs_ai_dataset\my_real_vs_ai_dataset",
-)
+# No default path — always pass --source explicitly.
+# You can also set the DEEPFAKE_DATASET_SRC environment variable.
+DEFAULT_SOURCE = os.environ.get("DEEPFAKE_DATASET_SRC", "")
 
 BASE_DST = os.path.dirname(os.path.abspath(__file__))
 TRAIN_FAKE_DST = os.path.join(BASE_DST, "dataset", "train", "fake")
@@ -34,8 +37,8 @@ VAL_REAL_DST = os.path.join(BASE_DST, "dataset", "validation", "real")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Prepare train/validation folders.")
     parser.add_argument("--source", default=DEFAULT_SOURCE, help="Root folder containing fake and real image folders.")
-    parser.add_argument("--fake-subdir", default="ai_images", help="Fake image subfolder name under --source.")
-    parser.add_argument("--real-subdir", default="real", help="Real image subfolder name under --source.")
+    parser.add_argument("--fake-subdir", default="fake", help="Fake image subfolder name under --source (default: fake).")
+    parser.add_argument("--real-subdir", default="real", help="Real image subfolder name under --source (default: real).")
     parser.add_argument("--train-per-class", type=int, default=5000)
     parser.add_argument("--val-per-class", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
@@ -87,6 +90,11 @@ def copy_images(src_folder: str, dst_folder: str, files: list[str], label: str) 
 def main() -> int:
     args = parse_args()
     random.seed(args.seed)
+
+    if not args.source:
+        print("\n[ERROR] --source is required. Pass the path to your dataset root folder.")
+        print("        Example: python prepare_dataset.py --source C:\\Users\\dhruv\\Downloads\\dataset")
+        return 1
 
     fake_src = os.path.join(args.source, args.fake_subdir)
     real_src = os.path.join(args.source, args.real_subdir)

@@ -1,7 +1,9 @@
 import os
 import json
+import logging
 import math
 import secrets
+import time
 import uuid
 from flask import Flask, abort, flash, redirect, render_template, request, session, url_for
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -19,6 +21,12 @@ from database import (
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+logging.basicConfig(
+    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(
     __name__,
@@ -183,35 +191,50 @@ def index():
     if request.method == "POST":
         # Validate that the request contains an image field
         if "image" not in request.files:
+            logger.info("Upload failed: no file part in request")
             flash("No file part in the request.")
             return redirect(url_for("index"))
 
         file = request.files["image"]
 
         if file.filename == "":
+            logger.info("Upload failed: no file selected")
             flash("No file selected.")
             return redirect(url_for("index"))
 
         # Server-side extension validation
         if not allowed_file(file.filename):
+            logger.info("Upload failed: unsupported file type %s", file.filename)
             flash("Unsupported file type. Please upload a PNG, JPG, or WEBP image.")
             return redirect(url_for("index"))
 
         # Sanitize filename and avoid overwriting previous uploads.
         try:
             filename = unique_upload_filename(file.filename)
+            logger.info("Processing upload original=%s stored=%s", file.filename, filename)
         except ValueError as e:
+            logger.warning("Filename generation error: %s", e)
             flash(str(e))
             return redirect(url_for("index"))
 
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         file.save(filepath)
+        logger.info("File saved: %s", filepath)
 
         try:
+            logger.info("Validating image integrity")
             validate_saved_image(filepath)
-            # predict_image now returns (label, confidence_pct, details)
+            logger.info("Image valid. Running inference")
+            inference_start = time.perf_counter()
             result, confidence, details = predict_image(filepath)
+            logger.info(
+                "Inference complete result=%s confidence=%.1f elapsed=%.2fs",
+                result,
+                confidence,
+                time.perf_counter() - inference_start,
+            )
         except Exception as e:
+            logger.exception("Processing error")
             try:
                 os.remove(filepath)
             except OSError:
@@ -220,8 +243,9 @@ def index():
             return redirect(url_for("index"))
 
         # Persist detection result including confidence score and details summary
-        details_json = json.dumps(details, sort_keys=True)
+        details_json = json.dumps(details, sort_keys=True, default=str)
         new_record_id = save_detection(filename=filename, result=result, confidence=confidence, details=details_json)
+        logger.info("Detection saved record_id=%s", new_record_id)
 
     record_count = get_detection_count()
     
@@ -239,6 +263,7 @@ def index():
 def dashboard():
     page = positive_int_arg("page", 1)
     search_query = request.args.get("q", "").strip()
+    logger.info("Accessing dashboard page=%s search=%s", page, search_query)
     dashboard_stats = get_detection_stats(search_query)
     total_records = dashboard_stats["total"]
     total_pages = max(1, math.ceil(total_records / DASHBOARD_PAGE_SIZE))
@@ -261,6 +286,7 @@ def dashboard():
 @app.route("/analysis/<int:record_id>")
 def analysis(record_id: int):
     """Heatmap / detail view for a single detection record."""
+    logger.info("Accessing detailed analysis record_id=%s", record_id)
     record = get_detection_by_id(record_id)
     if record is None:
         flash("Detection record not found.")
@@ -291,6 +317,7 @@ def analysis(record_id: int):
 @app.route("/delete/<int:record_id>", methods=["POST"])
 def delete_record(record_id: int):
     """Delete a detection record from the database."""
+    logger.info("Delete requested record_id=%s", record_id)
     record = get_detection_by_id(record_id)
     deleted = delete_detection(record_id)
     if deleted:
@@ -313,6 +340,7 @@ def delete_record(record_id: int):
 @app.route("/analytics")
 def analytics():
     """Aggregated statistics for deepfake detection."""
+    logger.info("Accessing analytics dashboard")
     stats = get_detection_stats()
     data = get_all_detections(limit=8)
 
@@ -321,12 +349,14 @@ def analytics():
 @app.route("/settings")
 def settings():
     """Redirect to the merged home page, Settings tab."""
+    logger.info("Accessing settings redirect")
     return redirect(url_for('index') + '?tab=settings')
 
 
 @app.route("/clear-history", methods=["POST"])
 def clear_history():
     """Delete all detection records from DB."""
+    logger.warning("Clear history requested")
     clear_detections()
     return "", 204
 
@@ -334,6 +364,7 @@ def clear_history():
 @app.route("/clear-uploads", methods=["POST"])
 def clear_uploads():
     """Delete all files in the uploads folder."""
+    logger.warning("Clear uploads requested")
     import glob
     for f in glob.glob(os.path.join(UPLOAD_FOLDER, "*")):
         if os.path.basename(f) == ".gitkeep" or not os.path.isfile(f):
@@ -343,6 +374,16 @@ def clear_uploads():
         except OSError:
             pass
     return "", 204
+
+
+@app.route("/health")
+def health():
+    return {
+        "status": "ok",
+        "models": get_loaded_model_names(),
+        "records": get_detection_count(),
+    }
+
 
 @app.route("/test-ui")
 def test_ui():

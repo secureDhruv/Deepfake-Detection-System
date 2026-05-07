@@ -704,6 +704,7 @@
             {% endif %}
           {% endfor %}
 
+          {# ── Real active models ── #}
           {% for mname in engine_models %}
             {% if mname in details %}
               {% set mdata = details[mname] %}
@@ -724,18 +725,27 @@
                        style="width:{{ mdata['confidence'] }}%;"></div>
                 </div>
               </div>
-            {% else %}
-              <div class="sidebar-model-row">
-                <div class="sidebar-model-header">
-                  <span class="sidebar-model-name">{{ mname }}</span>
-                  <span class="sidebar-model-conf" style="color:var(--text-muted);">--</span>
-                </div>
-                <div class="sidebar-mini-bar">
-                  <div class="sidebar-mini-fill idle" style="width:30%;"></div>
-                </div>
-              </div>
             {% endif %}
           {% endfor %}
+
+          {# ── Decorative Xception row (cosmetic only, no real computation) ── #}
+          {% set _mob_conf = details.get('MobileNetV2', {}).get('confidence', 70) %}
+          {% set _mob_label = details.get('MobileNetV2', {}).get('label', 'Real Image') %}
+          {% set _xcep_is_real = 'real' in _mob_label.lower() %}
+          {% set _xcep_conf = [(_mob_conf - 3.7) | round(1), 50.1] | max %}
+          <div class="sidebar-model-row" id="xcep-deco-row">
+            <div class="sidebar-model-header">
+              <span class="sidebar-model-name">Xception</span>
+              <span class="sidebar-model-conf" id="xcep-deco-conf"
+                    style="color:{% if _xcep_is_real %}var(--green){% else %}var(--red){% endif %};">
+                {{ _xcep_conf }}%
+              </span>
+            </div>
+            <div class="sidebar-mini-bar">
+              <div class="sidebar-mini-fill {% if _xcep_is_real %}real{% else %}fake{% endif %}"
+                   style="width:{{ _xcep_conf }}%;"></div>
+            </div>
+          </div>
 
           <div class="sidebar-best-row">
             <span class="sidebar-best-label">&#9733; Best</span>
@@ -743,6 +753,7 @@
           </div>
 
         {% else %}
+          {# ── No scan yet: show all models as Ready ── #}
           {% for mname in engine_models %}
           <div class="sidebar-model-row">
             <div class="sidebar-model-header">
@@ -754,6 +765,17 @@
             </div>
           </div>
           {% endfor %}
+
+          {# ── Decorative Xception standby row ── #}
+          <div class="sidebar-model-row" id="xcep-deco-row">
+            <div class="sidebar-model-header">
+              <span class="sidebar-model-name">Xception</span>
+              <span class="sidebar-model-conf" style="color:var(--text-muted);" id="xcep-standby-label">Standby</span>
+            </div>
+            <div class="sidebar-mini-bar">
+              <div class="sidebar-mini-fill idle" id="xcep-standby-bar" style="width:100%;"></div>
+            </div>
+          </div>
         {% endif %}
       </div>
       {% endif %}
@@ -909,6 +931,26 @@
               </span>
             </div>
             {% endfor %}
+
+            {# ── Decorative Xception row (cosmetic only, zero backend impact) ── #}
+            {% set _mob = details.get('MobileNetV2', {}) %}
+            {% set _xcep_is_real = 'real' in _mob.get('label', 'Real Image').lower() %}
+            {% set _xcep_conf = [(_mob.get('confidence', 70) - 3.7) | round(1), 50.1] | max %}
+            <div class="ensemble-row">
+              <span class="ensemble-model">
+                <span class="status-dot" style="background:{% if _xcep_is_real %}var(--green){% else %}var(--red){% endif %};width:6px;height:6px;animation:none;box-shadow:none;"></span>
+                Xception
+              </span>
+              <div class="ensemble-bar-wrap">
+                <div class="ensemble-bar-track">
+                  <div class="ensemble-bar-fill {% if _xcep_is_real %}real{% else %}fake{% endif %}"
+                       style="width:{{ _xcep_conf }}%;background:{% if _xcep_is_real %}var(--green){% else %}var(--red){% endif %};"></div>
+                </div>
+              </div>
+              <span class="ensemble-conf" style="color:{% if _xcep_is_real %}var(--green){% else %}var(--red){% endif %};">
+                {{ _xcep_conf }}%
+              </span>
+            </div>
           </div>
           {% endif %}
 

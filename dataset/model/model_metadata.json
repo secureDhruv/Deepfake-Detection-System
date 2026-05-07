@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "calibration": {
+    "source": "evaluate_models.py",
+    "validation_dir": "D:\\Deepfake Detector\\dataset\\validation",
+    "sample_per_class": 0,
+    "use_face_crop": true,
+    "min_balanced_accuracy": 0.56
+  },
+  "models": {
+    "MobileNetV2": {
+      "enabled": true,
+      "weight": 0.3925,
+      "threshold": 0.45521379,
+      "metrics": {
+        "auc": 0.9592,
+        "sample_count": 4000,
+        "use_face_crop": true,
+        "best_balanced": {
+          "threshold": 0.45521379,
+          "accuracy": 0.8925,
+          "precision_real": 0.9067,
+          "recall_real": 0.875,
+          "specificity_fake": 0.91,
+          "f1_real": 0.8906,
+          "balanced_accuracy": 0.8925,
+          "tp": 1750,
+          "tn": 1820,
+          "fp": 180,
+          "fn": 250
+        },
+        "best_f1": {
+          "threshold": 0.31057209,
+          "accuracy": 0.891,
+          "precision_real": 0.8713,
+          "recall_real": 0.9175,
+          "specificity_fake": 0.8645,
+          "f1_real": 0.8938,
+          "balanced_accuracy": 0.891,
+          "tp": 1835,
+          "tn": 1729,
+          "fp": 271,
+          "fn": 165
+        }
+      }
+    }
+  }
+}
